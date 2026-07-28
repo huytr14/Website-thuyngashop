@@ -1,10 +1,8 @@
 import { desc } from "drizzle-orm";
-import { getChatGPTUser } from "../../chatgpt-auth";
 import { getDb } from "../../../db";
 import { customers, orders, products } from "../../../db/schema";
 
 export async function GET() {
-  if (!(await getChatGPTUser())) return Response.json({ error: "Unauthorized" }, { status: 401 });
   const db=getDb();
   const [productRows,orderRows,customerRows]=await Promise.all([
     db.select().from(products).orderBy(desc(products.id)),

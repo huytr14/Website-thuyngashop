@@ -61,7 +61,7 @@ export default function AdminDashboard({user}:{user:{name:string;email:string}})
         <button className={section==="customers"?styles.active:""} onClick={()=>navigate("customers")}><i>♙</i>Khách hàng</button>
         <button className={section==="promotions"?styles.active:""} onClick={()=>navigate("promotions")}><i>％</i>Khuyến mãi</button>
       </nav>
-      <div className={styles.sideBottom}><a href="/">← Xem cửa hàng</a><a href="/signout-with-chatgpt?return_to=/">Đăng xuất</a></div>
+      <div className={styles.sideBottom}><a href="/">← Xem cửa hàng</a><a href="/">Trang bán hàng</a></div>
     </aside>
     <main className={styles.main}>
       <header className={styles.topbar}>
