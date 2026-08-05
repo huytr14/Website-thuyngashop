@@ -21,6 +21,14 @@ const products: Product[] = [
   { id: 6, brand: "LANEIGE", name: "Water Sleeping Mask EX", price: 579000, oldPrice: 760000, image: "https://images.unsplash.com/photo-1601049541289-9b1b7bbbfe19?auto=format&fit=crop&w=720&q=85" },
   { id: 7, brand: "ESTÉE LAUDER", name: "Advanced Night Repair Serum", price: 2450000, oldPrice: 3200000, image: "https://images.unsplash.com/photo-1571781926291-c477ebfd024b?auto=format&fit=crop&w=720&q=85" },
   { id: 8, brand: "SK-II", name: "Facial Treatment Essence", price: 2990000, oldPrice: 3850000, image: "https://images.unsplash.com/photo-1591130901921-3f0652bb3915?auto=format&fit=crop&w=720&q=85" },
+  { id: 9, brand: "KIEHL'S", name: "Clearly Corrective Dark Spot Solution", price: 1390000, oldPrice: 1750000, image: "https://images.unsplash.com/photo-1612817288484-6f916006741a?auto=format&fit=crop&w=720&q=85", badge: "NEW IN" },
+  { id: 10, brand: "CLINIQUE", name: "Moisture Surge 100H Auto-Replenishing", price: 1120000, oldPrice: 1480000, image: "https://images.unsplash.com/photo-1625772452859-1c03d5bf1137?auto=format&fit=crop&w=720&q=85" },
+  { id: 11, brand: "PAULA'S CHOICE", name: "Skin Perfecting 2% BHA Liquid", price: 890000, oldPrice: 1120000, image: "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=720&q=85", badge: "CULT FAVOURITE" },
+  { id: 12, brand: "BIODERMA", name: "Sensibio H2O Micellar Water", price: 445000, oldPrice: 590000, image: "https://images.unsplash.com/photo-1611930021592-a8cfd5319ceb?auto=format&fit=crop&w=720&q=85" },
+  { id: 13, brand: "LANCOME", name: "Advanced Genifique Youth Activating Serum", price: 2650000, oldPrice: 3450000, image: "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?auto=format&fit=crop&w=720&q=85", badge: "ICONIC" },
+  { id: 14, brand: "MAC", name: "Locked Kiss Ink 24HR Lipcolour", price: 825000, oldPrice: 1050000, image: "https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=720&q=85" },
+  { id: 15, brand: "INNISFREE", name: "Green Tea Seed Hyaluronic Serum", price: 760000, oldPrice: 980000, image: "https://images.unsplash.com/photo-1607602132700-068258431c1c?auto=format&fit=crop&w=720&q=85", badge: "K-BEAUTY" },
+  { id: 16, brand: "ANESSA", name: "Perfect UV Sunscreen Skincare Milk", price: 685000, oldPrice: 850000, image: "https://images.unsplash.com/photo-1619451334792-150fd785ee74?auto=format&fit=crop&w=720&q=85" },
 ];
 
 const format = (value: number) => `${value.toLocaleString("vi-VN")}₫`;
@@ -100,6 +108,13 @@ export default function Storefront() {
         <span>SHISEIDO</span><span>SK-II</span><span>LA ROCHE-POSAY</span><span>KÉRASTASE</span><span>SULWHASOO</span><span>DECORTÉ</span>
       </section>
 
+      <section className="quick-links">
+        <a href="#deals"><span>01</span><b>Skincare cao cấp</b><small>Khám phá 120+ sản phẩm →</small></a>
+        <a href="#new-arrivals"><span>02</span><b>New beauty drops</b><small>Cập nhật mỗi tuần →</small></a>
+        <a href="#deals"><span>03</span><b>Quà tặng tinh tế</b><small>Tuyển chọn theo dịp →</small></a>
+        <a href="#journal"><span>04</span><b>Beauty consultation</b><small>Được tư vấn miễn phí →</small></a>
+      </section>
+
       <section className="categories section" id="categories">
         <div className="section-heading">
           <div><p className="eyebrow">MUA SẮM THEO NHU CẦU</p><h2>Nghi thức dành riêng cho bạn</h2></div>
@@ -109,6 +124,31 @@ export default function Storefront() {
           <a className="category skin" href="#deals"><span>01</span><div><h3>Chăm sóc da</h3><p>Serum · Kem dưỡng · Mặt nạ</p></div></a>
           <a className="category makeup" href="#deals"><span>02</span><div><h3>Trang điểm</h3><p>Cushion · Son · Phấn phủ</p></div></a>
           <a className="category hair" href="#deals"><span>03</span><div><h3>Tóc & cơ thể</h3><p>Dầu gội · Dưỡng tóc · Nước hoa</p></div></a>
+        </div>
+      </section>
+
+      <section className="campaign-band">
+        <div className="campaign-copy">
+          <p className="eyebrow">EXCLUSIVE BEAUTY WEEK</p>
+          <h2>Quà tặng đến<br/><em>1.500.000₫</em></h2>
+          <p>Khi mua sắm các thương hiệu Shiseido, Sulwhasoo, SK-II và Lancôme. Số lượng giới hạn.</p>
+          <a href="#deals">MUA SẮM NGAY →</a>
+        </div>
+        <div className="campaign-image" />
+        <div className="campaign-number">08.25</div>
+      </section>
+
+      <section className="new-products section" id="new-arrivals">
+        <div className="section-heading">
+          <div><p className="eyebrow">JUST LANDED</p><h2>Vừa cập bến OLALA</h2></div>
+          <a href="#deals">Xem tất cả →</a>
+        </div>
+        <div className="new-grid">
+          {products.slice(8, 12).map((p, index) => <article className="new-card" key={p.id}>
+            <div className="new-index">0{index + 1}</div>
+            <img src={p.image} alt={p.name}/>
+            <div><p>{p.brand}</p><h3>{p.name}</h3><strong>{format(p.price)}</strong><button onClick={() => add(p.id)}>+</button></div>
+          </article>)}
         </div>
       </section>
 
@@ -138,6 +178,14 @@ export default function Storefront() {
       <section className="editorial" id="journal">
         <div className="editorial-image" />
         <div className="editorial-copy"><p className="eyebrow">THE OLALA JOURNAL</p><h2>Làn da mùa hè:<br/>ít hơn, hiệu quả hơn.</h2><p>Khám phá routine 4 bước giúp làn da cân bằng, trong trẻo và được bảo vệ suốt ngày dài.</p><a href="#">ĐỌC CẨM NANG →</a></div>
+      </section>
+
+      <section className="social-proof section">
+        <div className="proof-intro"><p className="eyebrow">TRUSTED BY BEAUTY LOVERS</p><h2>Được yêu bởi hơn<br/><em>18.000</em> khách hàng</h2><div className="stars">★ ★ ★ ★ ★ <span>4.9/5</span></div></div>
+        <div className="quotes">
+          <blockquote><p>“Sản phẩm được gói rất đẹp, tư vấn kỹ và giao nhanh. Mình cảm nhận rõ sự chỉn chu của một boutique cao cấp.”</p><footer><b>MINH ANH</b><span>Khách hàng từ TP.HCM</span></footer></blockquote>
+          <blockquote><p>“Mình yên tâm nhất ở nguồn gốc sản phẩm. Các set quà cũng rất tinh tế, không cần tự gói lại.”</p><footer><b>THU HÀ</b><span>Khách hàng thành viên</span></footer></blockquote>
+        </div>
       </section>
 
       <section className="benefits">
