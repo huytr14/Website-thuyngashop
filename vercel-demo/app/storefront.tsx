@@ -74,7 +74,7 @@ export default function Storefront() {
       <div className="announcement">MIỄN PHÍ GIAO HÀNG ĐƠN TỪ 1.000.000₫ · ĐỔI TRẢ TRONG 7 NGÀY</div>
       <header className="header">
         <button className="mobile-menu" onClick={() => setMenuOpen(!menuOpen)} aria-label="Mở menu">☰</button>
-        <a href="#" className="logo">OLALA <span>SELECT</span></a>
+        <a href="#" className="logo brand-logo" aria-label="THUYNGA Shop"><img src="/thuynga-logo.png" alt="THUYNGA Shop"/></a>
         <div className="header-actions">
           <label className="search">
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Tìm sản phẩm, thương hiệu..." />
@@ -96,7 +96,7 @@ export default function Storefront() {
         <div className="hero-copy">
           <p className="eyebrow">THE SUMMER EDIT · 2026</p>
           <h1>Vẻ đẹp được<br/><em>chọn lọc.</em></h1>
-          <p>Những biểu tượng làm đẹp được yêu thích, chính hãng và tuyển chọn bởi đội ngũ OLALA.</p>
+          <p>Những biểu tượng làm đẹp được yêu thích, chính hãng và tuyển chọn bởi đội ngũ THUYNGA Shop.</p>
           <a href="#deals" className="primary">KHÁM PHÁ ƯU ĐÃI <span>→</span></a>
         </div>
         <div className="hero-image">
@@ -140,7 +140,7 @@ export default function Storefront() {
 
       <section className="new-products section" id="new-arrivals">
         <div className="section-heading">
-          <div><p className="eyebrow">JUST LANDED</p><h2>Vừa cập bến OLALA</h2></div>
+          <div><p className="eyebrow">JUST LANDED</p><h2>Vừa cập bến THUYNGA</h2></div>
           <a href="#deals">Xem tất cả →</a>
         </div>
         <div className="new-grid">
@@ -154,7 +154,7 @@ export default function Storefront() {
 
       <section className="products section" id="deals">
         <div className="section-heading">
-          <div><p className="eyebrow">OLALA OFFERS</p><h2>Ưu đãi nổi bật</h2></div>
+          <div><p className="eyebrow">THUYNGA OFFERS</p><h2>Ưu đãi nổi bật</h2></div>
           <p className="result">{filtered.length} sản phẩm</p>
         </div>
         <div className="product-grid">
@@ -177,7 +177,7 @@ export default function Storefront() {
 
       <section className="editorial" id="journal">
         <div className="editorial-image" />
-        <div className="editorial-copy"><p className="eyebrow">THE OLALA JOURNAL</p><h2>Làn da mùa hè:<br/>ít hơn, hiệu quả hơn.</h2><p>Khám phá routine 4 bước giúp làn da cân bằng, trong trẻo và được bảo vệ suốt ngày dài.</p><a href="#">ĐỌC CẨM NANG →</a></div>
+        <div className="editorial-copy"><p className="eyebrow">THE THUYNGA JOURNAL</p><h2>Làn da mùa hè:<br/>ít hơn, hiệu quả hơn.</h2><p>Khám phá routine 4 bước giúp làn da cân bằng, trong trẻo và được bảo vệ suốt ngày dài.</p><a href="#">ĐỌC CẨM NANG →</a></div>
       </section>
 
       <section className="social-proof section">
@@ -196,12 +196,12 @@ export default function Storefront() {
       </section>
 
       <footer id="about">
-        <div className="footer-brand"><a className="logo">OLALA <span>SELECT</span></a><p>Điểm đến mua sắm mỹ phẩm cao cấp, chính hãng dành cho người phụ nữ hiện đại.</p></div>
+        <div className="footer-brand"><a className="logo brand-logo" aria-label="THUYNGA Shop"><img src="/thuynga-logo.png" alt="THUYNGA Shop"/></a><p>Điểm đến mua sắm mỹ phẩm cao cấp, chính hãng dành cho người phụ nữ hiện đại.</p></div>
         <div><h4>KHÁM PHÁ</h4><a href="#deals">Sản phẩm mới</a><a href="#deals">Ưu đãi</a><a href="#brands">Thương hiệu</a><a href="#journal">Cẩm nang</a></div>
         <div><h4>HỖ TRỢ</h4><a href="#">Hướng dẫn mua hàng</a><a href="#">Vận chuyển</a><a href="#">Đổi trả & hoàn tiền</a><a href="#">Liên hệ</a></div>
-        <div className="newsletter"><h4>OLALA LETTER</h4><p>Nhận câu chuyện làm đẹp và ưu đãi riêng.</p><label><input placeholder="Email của bạn"/><button>→</button></label></div>
+        <div className="newsletter"><h4>THUYNGA LETTER</h4><p>Nhận câu chuyện làm đẹp và ưu đãi riêng.</p><label><input placeholder="Email của bạn"/><button>→</button></label></div>
       </footer>
-      <div className="copyright">© 2026 OLALA SELECT <span>Facebook · Instagram · YouTube</span></div>
+      <div className="copyright">© 2026 THUYNGA SHOP <span>Facebook · Instagram · YouTube</span></div>
 
       {cartOpen && <div className="overlay" onMouseDown={() => setCartOpen(false)}>
         <aside className="cart-drawer" onMouseDown={(e) => e.stopPropagation()}>
@@ -223,8 +223,8 @@ export default function Storefront() {
       </div>}
 
       {checkout && <div className="checkout">
-        <div className="checkout-top"><a className="logo">OLALA <span>SELECT</span></a><button onClick={() => {setCheckout(false); setOrdered(false)}}>×</button></div>
-        {ordered ? <div className="success"><span>✓</span><p className="eyebrow">ĐẶT HÀNG THÀNH CÔNG</p><h2>Cảm ơn bạn đã lựa chọn OLALA.</h2><p>Mã đơn hàng <strong>#OLA260728</strong>. Xác nhận đơn hàng sẽ được gửi qua email và số điện thoại của bạn.</p><button onClick={() => {setCheckout(false);setOrdered(false)}}>TIẾP TỤC KHÁM PHÁ</button></div> :
+        <div className="checkout-top"><a className="logo brand-logo" aria-label="THUYNGA Shop"><img src="/thuynga-logo.png" alt="THUYNGA Shop"/></a><button onClick={() => {setCheckout(false); setOrdered(false)}}>×</button></div>
+        {ordered ? <div className="success"><span>✓</span><p className="eyebrow">ĐẶT HÀNG THÀNH CÔNG</p><h2>Cảm ơn bạn đã lựa chọn THUYNGA Shop.</h2><p>Mã đơn hàng <strong>#TNG260728</strong>. Xác nhận đơn hàng sẽ được gửi qua email và số điện thoại của bạn.</p><button onClick={() => {setCheckout(false);setOrdered(false)}}>TIẾP TỤC KHÁM PHÁ</button></div> :
         <form onSubmit={submitOrder} className="checkout-grid">
           <section className="checkout-form">
             <div className="checkout-steps"><b>1 Thông tin</b><span>2 Vận chuyển</span><span>3 Thanh toán</span></div>

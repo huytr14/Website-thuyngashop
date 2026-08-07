@@ -52,7 +52,7 @@ export default function AdminDashboard({user}:{user:{name:string;email:string}})
 
   return <div className={styles.shell}>
     <aside className={styles.sidebar}>
-      <a href="/" className={styles.logo}>OLALA <span>SELECT</span></a>
+      <a href="/" className={styles.logo} aria-label="THUYNGA Shop"><img src="/thuynga-logo.png" alt="THUYNGA Shop"/></a>
       <p className={styles.adminLabel}>ADMIN CONSOLE</p>
       <nav>
         <button className={section==="overview"?styles.active:""} onClick={()=>navigate("overview")}><i>⌂</i>Tổng quan</button>

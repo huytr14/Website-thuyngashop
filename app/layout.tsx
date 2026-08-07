@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { Cormorant_Garamond, Montserrat } from "next/font/google";
 import "./globals.css";
 import "./homepage.css";
+import "./brand.css";
 
 const display = Cormorant_Garamond({ variable: "--font-display", subsets: ["latin"], weight: ["400","500","600"] });
 const sans = Montserrat({ variable: "--font-sans", subsets: ["latin","vietnamese"], weight: ["400","500","600","700"] });
@@ -14,14 +15,10 @@ export async function generateMetadata(): Promise<Metadata> {
   const base = new URL(`${protocol}://${host}`);
   return {
     metadataBase: base,
-    title: "OLALA SELECT — Vẻ đẹp được chọn lọc",
+    title: "THUYNGA Shop — Vẻ đẹp được chọn lọc",
     description: "Mỹ phẩm cao cấp chính hãng, tuyển chọn dành cho người phụ nữ hiện đại.",
-    openGraph: {
-      title: "OLALA SELECT — Vẻ đẹp được chọn lọc",
-      description: "Mỹ phẩm cao cấp chính hãng, tuyển chọn dành cho người phụ nữ hiện đại.",
-      images: [{ url: new URL("/og.png", base).toString(), width: 1200, height: 630 }],
-    },
-    twitter: { card: "summary_large_image", images: [new URL("/og.png", base).toString()] },
+    openGraph: { title: "THUYNGA Shop — Vẻ đẹp được chọn lọc", description: "Mỹ phẩm cao cấp chính hãng, tuyển chọn dành cho người phụ nữ hiện đại.", images: [{ url: new URL("/thuynga-logo.png", base).toString(), width: 1080, height: 1080, alt: "THUYNGA Shop" }] },
+    twitter: { card: "summary_large_image", images: [new URL("/thuynga-logo.png", base).toString()] },
   };
 }
 
