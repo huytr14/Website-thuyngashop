@@ -1,261 +1,138 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowUpRight, Headphones, Search, ShoppingBag, Sparkles } from "lucide-react";
+import CartDrawer from "@/components/storefront/CartDrawer";
+import Footer from "@/components/storefront/Footer";
+import Header from "@/components/storefront/Header";
+import Hero from "@/components/storefront/Hero";
+import ProductDetailModal from "@/components/storefront/ProductDetailModal";
+import ProductGrid from "@/components/storefront/ProductGrid";
+import type { Product } from "@/components/storefront/types";
+import { formatPrice as format } from "@/catalog/products";
+import { CART_STORAGE_KEY, parseCart, storeCart } from "@/lib/cart";
 
-type Product = {
-  id: number;
-  brand: string;
-  name: string;
-  price: number;
-  oldPrice: number;
-  image: string;
-  badge?: string;
-};
+type StorefrontProps = { products: Product[]; categories: string[] };
 
-const products: Product[] = [
-  { id: 1, brand: "SHISEIDO", name: "Ultimune Power Infusing Concentrate", price: 2780000, oldPrice: 3850000, image: "https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?auto=format&fit=crop&w=720&q=85", badge: "BÁN CHẠY" },
-  { id: 2, brand: "LA ROCHE-POSAY", name: "Hyalu B5 Serum phục hồi chuyên sâu", price: 998000, oldPrice: 1320000, image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=720&q=85" },
-  { id: 3, brand: "DECORTÉ", name: "Liposome Advanced Repair Cream", price: 1599000, oldPrice: 2300000, image: "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?auto=format&fit=crop&w=720&q=85", badge: "MỚI" },
-  { id: 4, brand: "KÉRASTASE", name: "Elixir Ultime dầu dưỡng tóc", price: 1250000, oldPrice: 1690000, image: "https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=720&q=85" },
-  { id: 5, brand: "SULWHASOO", name: "First Care Activating Serum VI", price: 2190000, oldPrice: 2950000, image: "https://images.unsplash.com/photo-1611930022073-b7a4ba5fcccd?auto=format&fit=crop&w=720&q=85" },
-  { id: 6, brand: "LANEIGE", name: "Water Sleeping Mask EX", price: 579000, oldPrice: 760000, image: "https://images.unsplash.com/photo-1601049541289-9b1b7bbbfe19?auto=format&fit=crop&w=720&q=85" },
-  { id: 7, brand: "ESTÉE LAUDER", name: "Advanced Night Repair Serum", price: 2450000, oldPrice: 3200000, image: "https://images.unsplash.com/photo-1571781926291-c477ebfd024b?auto=format&fit=crop&w=720&q=85" },
-  { id: 8, brand: "SK-II", name: "Facial Treatment Essence", price: 2990000, oldPrice: 3850000, image: "https://images.unsplash.com/photo-1591130901921-3f0652bb3915?auto=format&fit=crop&w=720&q=85" },
-  { id: 9, brand: "KIEHL'S", name: "Clearly Corrective Dark Spot Solution", price: 1390000, oldPrice: 1750000, image: "https://images.unsplash.com/photo-1612817288484-6f916006741a?auto=format&fit=crop&w=720&q=85", badge: "NEW IN" },
-  { id: 10, brand: "CLINIQUE", name: "Moisture Surge 100H Auto-Replenishing", price: 1120000, oldPrice: 1480000, image: "https://images.unsplash.com/photo-1625772452859-1c03d5bf1137?auto=format&fit=crop&w=720&q=85" },
-  { id: 11, brand: "PAULA'S CHOICE", name: "Skin Perfecting 2% BHA Liquid", price: 890000, oldPrice: 1120000, image: "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=720&q=85", badge: "CULT FAVOURITE" },
-  { id: 12, brand: "BIODERMA", name: "Sensibio H2O Micellar Water", price: 445000, oldPrice: 590000, image: "https://images.unsplash.com/photo-1611930021592-a8cfd5319ceb?auto=format&fit=crop&w=720&q=85" },
-  { id: 13, brand: "LANCOME", name: "Advanced Genifique Youth Activating Serum", price: 2650000, oldPrice: 3450000, image: "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?auto=format&fit=crop&w=720&q=85", badge: "ICONIC" },
-  { id: 14, brand: "MAC", name: "Locked Kiss Ink 24HR Lipcolour", price: 825000, oldPrice: 1050000, image: "https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=720&q=85" },
-  { id: 15, brand: "INNISFREE", name: "Green Tea Seed Hyaluronic Serum", price: 760000, oldPrice: 980000, image: "https://images.unsplash.com/photo-1607602132700-068258431c1c?auto=format&fit=crop&w=720&q=85", badge: "K-BEAUTY" },
-  { id: 16, brand: "ANESSA", name: "Perfect UV Sunscreen Skincare Milk", price: 685000, oldPrice: 850000, image: "https://images.unsplash.com/photo-1619451334792-150fd785ee74?auto=format&fit=crop&w=720&q=85" },
-];
-
-const format = (value: number) => `${value.toLocaleString("vi-VN")}₫`;
-
-export default function Storefront() {
+export default function Storefront({ products, categories }: StorefrontProps) {
   const [cart, setCart] = useState<Record<number, number>>({});
   const [cartOpen, setCartOpen] = useState(false);
-  const [checkout, setCheckout] = useState(false);
-  const [ordered, setOrdered] = useState(false);
   const [query, setQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [category, setCategory] = useState("Tất cả");
+  const [sort, setSort] = useState("featured");
+  const [detailQty, setDetailQty] = useState(1);
+  const [heroIndex, setHeroIndex] = useState(0);
+  const [showAllProducts, setShowAllProducts] = useState(false);
 
+  useEffect(() => {
+    const available = new Set(products.map(({ id }) => id));
+    setCart(Object.fromEntries(Object.entries(parseCart(localStorage.getItem(CART_STORAGE_KEY))).filter(([id]) => available.has(Number(id)))));
+  }, [products]);
+
+  const categoryOf = (product: Product) => product.category;
   const filtered = products.filter((p) =>
-    `${p.brand} ${p.name}`.toLowerCase().includes(query.toLowerCase())
-  );
+    `${p.brand} ${p.name}`.toLowerCase().includes(query.trim().toLowerCase()) &&
+    (category === "Tất cả" || categoryOf(p) === category)
+  ).sort((a, b) => sort === "price-asc" ? a.price - b.price : sort === "price-desc" ? b.price - a.price : a.id - b.id);
   const count = Object.values(cart).reduce((a, b) => a + b, 0);
   const subtotal = useMemo(
     () => products.reduce((sum, p) => sum + p.price * (cart[p.id] || 0), 0),
     [cart]
   );
-  const shipping = subtotal >= 1000000 || !subtotal ? 0 : 30000;
+  const visibleProducts = filtered.slice(0, showAllProducts || query ? undefined : 12);
 
-  const add = (id: number) => {
-    setCart((c) => ({ ...c, [id]: (c[id] || 0) + 1 }));
+  const add = (id: number, quantity = 1) => {
+    const next = { ...cart, [id]: Math.min(99, (cart[id] || 0) + quantity) };
+    setCart(next);
+    storeCart(next);
     setCartOpen(true);
+  };
+  const buyNow = (id: number, quantity = 1) => {
+    const next = { ...cart, [id]: Math.min(99, (cart[id] || 0) + quantity) };
+    storeCart(next);
+    location.assign("/thanh-toan");
   };
   const update = (id: number, delta: number) =>
     setCart((c) => {
       const next = Math.max(0, (c[id] || 0) + delta);
       const copy = { ...c, [id]: next };
       if (!next) delete copy[id];
+      storeCart(copy);
       return copy;
     });
-
-  const submitOrder = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setOrdered(true);
-    setCart({});
-  };
+  const openProduct = (product: Product) => { setSelectedProduct(product); setDetailQty(1); };
 
   return (
     <main>
-      <div className="announcement">MIỄN PHÍ GIAO HÀNG ĐƠN TỪ 1.000.000₫ · ĐỔI TRẢ TRONG 7 NGÀY</div>
-      <header className="header">
-        <button className="mobile-menu" onClick={() => setMenuOpen(!menuOpen)} aria-label="Mở menu">☰</button>
-        <a href="#" className="logo brand-logo" aria-label="THUYNGA Shop"><img src="/thuynga-logo.png" alt="THUYNGA Shop"/></a>
-        <div className="header-actions">
-          <label className="search">
-            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Tìm sản phẩm, thương hiệu..." />
-            <span>⌕</span>
-          </label>
-          <button className="account">♙ <span>Tài khoản</span></button>
-          <button className="cart-button" onClick={() => setCartOpen(true)}>Túi hàng <b>{count}</b></button>
-        </div>
-      </header>
-      <nav className={menuOpen ? "nav open" : "nav"}>
-        <a href="#deals">ƯU ĐÃI THEO CHƯƠNG TRÌNH</a>
-        <a href="#brands">THƯƠNG HIỆU</a>
-        <a href="#categories">SẢN PHẨM THEO NHU CẦU</a>
-        <a href="#journal">CẨM NANG</a>
-        <a href="#about">VỀ CHÚNG TÔI</a>
-      </nav>
+      <Header menuOpen={menuOpen} searchOpen={searchOpen} query={query} count={count} setMenuOpen={setMenuOpen} setSearchOpen={setSearchOpen} setQuery={setQuery} setCategory={setCategory} openCart={() => setCartOpen(true)}/>
+      <Hero heroIndex={heroIndex} setHeroIndex={setHeroIndex}/>
+      <ProductGrid categories={categories} category={category} sort={sort} query={query} filtered={filtered} visibleProducts={visibleProducts} showAllProducts={showAllProducts} setCategory={setCategory} setSort={setSort} setShowAllProducts={setShowAllProducts} openProduct={openProduct} buyNow={buyNow} format={format}/>
 
-      <section className="hero">
-        <div className="hero-copy">
-          <p className="eyebrow">THE SUMMER EDIT · 2026</p>
-          <h1>Vẻ đẹp được<br/><em>chọn lọc.</em></h1>
-          <p>Những biểu tượng làm đẹp được yêu thích, chính hãng và tuyển chọn bởi đội ngũ THUYNGA Shop.</p>
-          <a href="#deals" className="primary">KHÁM PHÁ ƯU ĐÃI <span>→</span></a>
-        </div>
-        <div className="hero-image">
-          <div className="hero-note"><strong>ĐẾN 45%</strong><span>Ưu đãi mùa hè</span></div>
-        </div>
+      <section className="feature-banner">
+        <div><p>THUYNGA BEAUTY EDIT</p><h2>Mỗi ngày là một<br/><em>khoảnh khắc đẹp.</em></h2><span>Một chút chăm sóc, một chút sắc màu — để bạn luôn là phiên bản mình yêu thích.</span><a href="#new-arrivals">KHÁM PHÁ THÊM <ArrowUpRight size={16}/></a></div>
+        <img src="https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=1400&q=85" alt="Bộ sưu tập mỹ phẩm" loading="lazy"/>
       </section>
 
-      <section className="brands" id="brands">
-        <span>SHISEIDO</span><span>SK-II</span><span>LA ROCHE-POSAY</span><span>KÉRASTASE</span><span>SULWHASOO</span><span>DECORTÉ</span>
-      </section>
-
-      <section className="quick-links">
-        <a href="#deals"><span>01</span><b>Skincare cao cấp</b><small>Khám phá 120+ sản phẩm →</small></a>
-        <a href="#new-arrivals"><span>02</span><b>New beauty drops</b><small>Cập nhật mỗi tuần →</small></a>
-        <a href="#deals"><span>03</span><b>Quà tặng tinh tế</b><small>Tuyển chọn theo dịp →</small></a>
-        <a href="#journal"><span>04</span><b>Beauty consultation</b><small>Được tư vấn miễn phí →</small></a>
-      </section>
-
-      <section className="categories section" id="categories">
-        <div className="section-heading">
-          <div><p className="eyebrow">MUA SẮM THEO NHU CẦU</p><h2>Nghi thức dành riêng cho bạn</h2></div>
-          <a href="#deals">Xem tất cả →</a>
+      <section className="category-section section" id="categories">
+        <div className="section-intro"><div><span className="section-overline">02 / MUA SẮM THEO NHU CẦU</span><h2>Khám phá danh mục</h2></div><p>Từ bước chăm sóc da mỗi ngày đến điểm nhấn cuối cùng cho diện mạo của bạn.</p></div>
+        <div className="beauty-categories">
+          <a className="beauty-category" href="#deals" onClick={() => setCategory("Chăm sóc da")}><img src="https://images.unsplash.com/photo-1556229010-6c3f2c9ca5f8?auto=format&fit=crop&w=1000&q=85" alt="Chăm sóc da" loading="lazy"/><span>01 / SKINCARE</span><strong>Chăm sóc da</strong><ArrowUpRight size={23}/></a>
+          <a className="beauty-category" href="#deals" onClick={() => setCategory("Trang điểm")}><img src="https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=1000&q=85" alt="Trang điểm" loading="lazy"/><span>02 / MAKEUP</span><strong>Trang điểm</strong><ArrowUpRight size={23}/></a>
+          <a className="beauty-category" href="#deals" onClick={() => setCategory("Tóc & cơ thể")}><img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1000&q=85" alt="Cảm hứng chăm sóc tóc và cơ thể" loading="lazy"/><span>03 / BODY & HAIR</span><strong>Tóc & cơ thể</strong><ArrowUpRight size={23}/></a>
         </div>
-        <div className="category-grid">
-          <a className="category skin" href="#deals"><span>01</span><div><h3>Chăm sóc da</h3><p>Serum · Kem dưỡng · Mặt nạ</p></div></a>
-          <a className="category makeup" href="#deals"><span>02</span><div><h3>Trang điểm</h3><p>Cushion · Son · Phấn phủ</p></div></a>
-          <a className="category hair" href="#deals"><span>03</span><div><h3>Tóc & cơ thể</h3><p>Dầu gội · Dưỡng tóc · Nước hoa</p></div></a>
-        </div>
-      </section>
-
-      <section className="campaign-band">
-        <div className="campaign-copy">
-          <p className="eyebrow">EXCLUSIVE BEAUTY WEEK</p>
-          <h2>Quà tặng đến<br/><em>1.500.000₫</em></h2>
-          <p>Khi mua sắm các thương hiệu Shiseido, Sulwhasoo, SK-II và Lancôme. Số lượng giới hạn.</p>
-          <a href="#deals">MUA SẮM NGAY →</a>
-        </div>
-        <div className="campaign-image" />
-        <div className="campaign-number">08.25</div>
       </section>
 
       <section className="new-products section" id="new-arrivals">
         <div className="section-heading">
-          <div><p className="eyebrow">JUST LANDED</p><h2>Vừa cập bến THUYNGA</h2></div>
-          <a href="#deals">Xem tất cả →</a>
+          <div><span className="section-overline">03 / GỢI Ý CHO BẠN</span><h2>BEAUTY EDIT</h2><p>Thêm cảm hứng cho giỏ hàng của bạn, từ dưỡng da đến chăm sóc cơ thể.</p></div>
+          <a href="#deals" onClick={() => setShowAllProducts(true)}>Xem tất cả <ArrowUpRight size={15}/></a>
         </div>
         <div className="new-grid">
-          {products.slice(8, 12).map((p, index) => <article className="new-card" key={p.id}>
+          {products.slice(16, 24).map((p, index) => <article className="new-card" key={p.id}>
             <div className="new-index">0{index + 1}</div>
-            <img src={p.image} alt={p.name}/>
-            <div><p>{p.brand}</p><h3>{p.name}</h3><strong>{format(p.price)}</strong><button onClick={() => add(p.id)}>+</button></div>
+            <button className="new-image-open" onClick={() => openProduct(p)} aria-label={`Xem chi tiết ${p.name}`}><img src={p.image} alt={p.name} loading="lazy"/></button>
+            <div><p>{p.brand}</p><h3><button className="product-link" onClick={() => openProduct(p)}>{p.name}</button></h3><strong>{format(p.price)}</strong><button onClick={() => add(p.id)} aria-label={`Thêm ${p.name} vào túi`}><ShoppingBag size={16}/></button></div>
           </article>)}
         </div>
       </section>
 
-      <section className="products section" id="deals">
+      <section className="price-edit section" id="under-million">
         <div className="section-heading">
-          <div><p className="eyebrow">THUYNGA OFFERS</p><h2>Ưu đãi nổi bật</h2></div>
-          <p className="result">{filtered.length} sản phẩm</p>
+          <div><span className="section-overline">04 / DỄ BẮT ĐẦU</span><h2>ĐẸP MỖI NGÀY, GIÁ DỄ CHỌN</h2><p>Những món nhỏ xinh dưới 1 triệu đồng trong danh mục mẫu.</p></div>
+          <a href="#deals" onClick={() => { setShowAllProducts(true); setSort("price-asc"); }}>Khám phá tất cả <ArrowUpRight size={15}/></a>
         </div>
-        <div className="product-grid">
-          {filtered.map((p) => (
-            <article className="product" key={p.id}>
-              <div className="product-image">
-                {p.badge && <span className="product-badge">{p.badge}</span>}
-                <span className="discount">-{Math.round((1 - p.price / p.oldPrice) * 100)}%</span>
-                <img src={p.image} alt={p.name} />
-                <button onClick={() => add(p.id)}>THÊM VÀO TÚI</button>
-              </div>
-              <p className="product-brand">{p.brand}</p>
-              <h3>{p.name}</h3>
-              <div className="price"><strong>{format(p.price)}</strong><del>{format(p.oldPrice)}</del></div>
-            </article>
-          ))}
+        <div className="price-edit-grid">
+          {products.filter((p) => p.price < 1000000).slice(0, 6).map((p) => <article className="price-edit-card" key={p.id}>
+            <button className="price-edit-image" onClick={() => openProduct(p)} aria-label={`Xem chi tiết ${p.name}`}><img src={p.image} alt={p.name} loading="lazy"/></button>
+            <div><small>{p.brand}</small><h3><button className="product-link" onClick={() => openProduct(p)}>{p.name}</button></h3><strong>{format(p.price)}</strong><button className="price-edit-buy" onClick={() => buyNow(p.id)}>MUA NGAY <ArrowUpRight size={13}/></button></div>
+          </article>)}
         </div>
-        {!filtered.length && <div className="empty-search">Không tìm thấy sản phẩm phù hợp.</div>}
       </section>
 
-      <section className="editorial" id="journal">
-        <div className="editorial-image" />
-        <div className="editorial-copy"><p className="eyebrow">THE THUYNGA JOURNAL</p><h2>Làn da mùa hè:<br/>ít hơn, hiệu quả hơn.</h2><p>Khám phá routine 4 bước giúp làn da cân bằng, trong trẻo và được bảo vệ suốt ngày dài.</p><a href="#">ĐỌC CẨM NANG →</a></div>
-      </section>
+      <section className="brand-strip" aria-label="Các nhu cầu làm đẹp"><p>CHỌN MÓN ĐẸP THEO NHU CẦU</p><div><span>DƯỠNG ẨM</span><span>LÀM SẠCH</span><span>TRANG ĐIỂM</span><span>CHĂM SÓC TÓC</span><span>CHĂM SÓC CƠ THỂ</span></div></section>
 
-      <section className="social-proof section">
-        <div className="proof-intro"><p className="eyebrow">TRUSTED BY BEAUTY LOVERS</p><h2>Được yêu bởi hơn<br/><em>18.000</em> khách hàng</h2><div className="stars">★ ★ ★ ★ ★ <span>4.9/5</span></div></div>
-        <div className="quotes">
-          <blockquote><p>“Sản phẩm được gói rất đẹp, tư vấn kỹ và giao nhanh. Mình cảm nhận rõ sự chỉn chu của một boutique cao cấp.”</p><footer><b>MINH ANH</b><span>Khách hàng từ TP.HCM</span></footer></blockquote>
-          <blockquote><p>“Mình yên tâm nhất ở nguồn gốc sản phẩm. Các set quà cũng rất tinh tế, không cần tự gói lại.”</p><footer><b>THU HÀ</b><span>Khách hàng thành viên</span></footer></blockquote>
+      <section className="journal section">
+        <div className="section-intro"><div><span className="section-overline">05 / THE BEAUTY NOTES</span><h2>Cảm hứng mỗi ngày</h2></div><p>Những ý tưởng nhỏ để việc chăm sóc bản thân luôn là một niềm vui.</p></div>
+        <div className="journal-grid">
+          <a href="#deals" onClick={() => setCategory("Chăm sóc da")}><img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=950&q=85" alt="Cảm hứng chăm sóc bản thân" loading="lazy"/><span>01 / BEAUTY RITUAL</span><h3>Vẻ đẹp bắt đầu từ những phút dành cho mình</h3><small>KHÁM PHÁ CHĂM SÓC DA <ArrowUpRight size={14}/></small></a>
+          <a href="#deals" onClick={() => setCategory("Trang điểm")}><img src="https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=950&q=85" alt="Các sản phẩm trang điểm" loading="lazy"/><span>02 / COLOR STORY</span><h3>Một sắc màu nhỏ, một ngày thật khác</h3><small>KHÁM PHÁ TRANG ĐIỂM <ArrowUpRight size={14}/></small></a>
+          <a href="#deals" onClick={() => setCategory("Tóc & cơ thể")}><img src="https://images.unsplash.com/photo-1522338242992-e1a54906a8da?auto=format&fit=crop&w=950&q=85" alt="Chăm sóc tóc và cơ thể" loading="lazy"/><span>03 / SELF CARE</span><h3>Nhịp chăm sóc dịu dàng cho mỗi ngày</h3><small>KHÁM PHÁ SẢN PHẨM <ArrowUpRight size={14}/></small></a>
         </div>
       </section>
 
       <section className="benefits">
-        <div><b>◇</b><h3>Cam kết chính hãng</h3><p>Nguồn gốc minh bạch, kiểm định nghiêm ngặt.</p></div>
-        <div><b>♧</b><h3>Tư vấn chuyên sâu</h3><p>Đội ngũ beauty advisor đồng hành cùng bạn.</p></div>
-        <div><b>↻</b><h3>Đổi trả dễ dàng</h3><p>Hỗ trợ đổi trả trong vòng 7 ngày.</p></div>
-        <div><b>♢</b><h3>Đóng gói tinh tế</h3><p>Mỗi đơn hàng là một món quà.</p></div>
+        <div><Sparkles size={30}/><h3>Chọn lọc tinh tế</h3><p>Khám phá sản phẩm theo từng nhu cầu làm đẹp.</p></div>
+        <div><Search size={30}/><h3>Tìm kiếm dễ dàng</h3><p>Chọn danh mục hoặc tìm tên sản phẩm thật nhanh.</p></div>
+        <div><ShoppingBag size={30}/><h3>Mua sắm thuận tiện</h3><p>Xem chi tiết, thêm vào túi và đặt hàng trong vài bước.</p></div>
+        <div><Headphones size={30}/><h3>Thông tin rõ ràng</h3><p>Chính sách và kênh hỗ trợ sẽ cập nhật khi vận hành.</p></div>
       </section>
 
-      <footer id="about">
-        <div className="footer-brand"><a className="logo brand-logo" aria-label="THUYNGA Shop"><img src="/thuynga-logo.png" alt="THUYNGA Shop"/></a><p>Điểm đến mua sắm mỹ phẩm cao cấp, chính hãng dành cho người phụ nữ hiện đại.</p></div>
-        <div><h4>KHÁM PHÁ</h4><a href="#deals">Sản phẩm mới</a><a href="#deals">Ưu đãi</a><a href="#brands">Thương hiệu</a><a href="#journal">Cẩm nang</a></div>
-        <div><h4>HỖ TRỢ</h4><a href="#">Hướng dẫn mua hàng</a><a href="#">Vận chuyển</a><a href="#">Đổi trả & hoàn tiền</a><a href="#">Liên hệ</a></div>
-        <div className="newsletter"><h4>THUYNGA LETTER</h4><p>Nhận câu chuyện làm đẹp và ưu đãi riêng.</p><label><input placeholder="Email của bạn"/><button>→</button></label></div>
-      </footer>
-      <div className="copyright">© 2026 THUYNGA SHOP <span>Facebook · Instagram · YouTube</span></div>
-
-      {cartOpen && <div className="overlay" onMouseDown={() => setCartOpen(false)}>
-        <aside className="cart-drawer" onMouseDown={(e) => e.stopPropagation()}>
-          <div className="drawer-head"><h2>Túi hàng <sup>{count}</sup></h2><button onClick={() => setCartOpen(false)}>×</button></div>
-          <div className="cart-lines">
-            {!count && <div className="empty"><span>◇</span><h3>Túi hàng đang trống</h3><p>Những món đồ đẹp đang chờ bạn khám phá.</p><button onClick={() => setCartOpen(false)}>TIẾP TỤC MUA SẮM</button></div>}
-            {products.filter((p) => cart[p.id]).map((p) => <div className="cart-line" key={p.id}>
-              <img src={p.image} alt=""/>
-              <div><small>{p.brand}</small><h4>{p.name}</h4><div className="qty"><button onClick={() => update(p.id,-1)}>−</button><span>{cart[p.id]}</span><button onClick={() => update(p.id,1)}>+</button></div></div>
-              <strong>{format(p.price * cart[p.id])}</strong>
-            </div>)}
-          </div>
-          {!!count && <div className="cart-footer">
-            <div><span>Tạm tính</span><strong>{format(subtotal)}</strong></div>
-            <p>Phí vận chuyển được tính ở bước thanh toán.</p>
-            <button onClick={() => { setCartOpen(false); setCheckout(true); }}>THANH TOÁN · {format(subtotal)}</button>
-          </div>}
-        </aside>
-      </div>}
-
-      {checkout && <div className="checkout">
-        <div className="checkout-top"><a className="logo brand-logo" aria-label="THUYNGA Shop"><img src="/thuynga-logo.png" alt="THUYNGA Shop"/></a><button onClick={() => {setCheckout(false); setOrdered(false)}}>×</button></div>
-        {ordered ? <div className="success"><span>✓</span><p className="eyebrow">ĐẶT HÀNG THÀNH CÔNG</p><h2>Cảm ơn bạn đã lựa chọn THUYNGA Shop.</h2><p>Mã đơn hàng <strong>#TNG260728</strong>. Xác nhận đơn hàng sẽ được gửi qua email và số điện thoại của bạn.</p><button onClick={() => {setCheckout(false);setOrdered(false)}}>TIẾP TỤC KHÁM PHÁ</button></div> :
-        <form onSubmit={submitOrder} className="checkout-grid">
-          <section className="checkout-form">
-            <div className="checkout-steps"><b>1 Thông tin</b><span>2 Vận chuyển</span><span>3 Thanh toán</span></div>
-            <h2>Thông tin giao hàng</h2>
-            <div className="field-grid">
-              <label className="full"><span>Email</span><input type="email" required placeholder="hello@example.com"/></label>
-              <label><span>Họ và tên</span><input required placeholder="Nguyễn Minh Anh"/></label>
-              <label><span>Số điện thoại</span><input required pattern="[0-9]{9,11}" placeholder="090 123 4567"/></label>
-              <label className="full"><span>Địa chỉ</span><input required placeholder="Số nhà, tên đường"/></label>
-              <label><span>Tỉnh / Thành phố</span><select required defaultValue=""><option value="" disabled>Chọn tỉnh / thành</option><option>TP. Hồ Chí Minh</option><option>Hà Nội</option><option>Đà Nẵng</option><option>Cần Thơ</option></select></label>
-              <label><span>Quận / Huyện</span><input required placeholder="Quận / Huyện"/></label>
-            </div>
-            <h2>Phương thức vận chuyển</h2>
-            <label className="method selected"><input type="radio" defaultChecked name="shipping"/><span><b>Giao hàng tiêu chuẩn</b><small>2–4 ngày làm việc</small></span><strong>{shipping ? format(shipping) : "MIỄN PHÍ"}</strong></label>
-            <h2>Phương thức thanh toán</h2>
-            <div className="payment-methods">
-              <label className="method"><input type="radio" defaultChecked name="payment"/><span><b>Thanh toán khi nhận hàng (COD)</b><small>Thanh toán tiền mặt cho đơn vị vận chuyển</small></span></label>
-              <label className="method"><input type="radio" name="payment"/><span><b>Thẻ ATM / Visa / Mastercard</b><small>Kết nối cổng thanh toán khi đưa vào vận hành</small></span><i>VISA · MC</i></label>
-              <label className="method"><input type="radio" name="payment"/><span><b>Chuyển khoản ngân hàng</b><small>Thông tin chuyển khoản gửi sau khi đặt hàng</small></span></label>
-            </div>
-            <button className="place-order" type="submit">HOÀN TẤT ĐẶT HÀNG · {format(subtotal + shipping)}</button>
-            <p className="secure">⌾ Giao dịch được bảo vệ và mã hóa an toàn</p>
-          </section>
-          <aside className="order-summary">
-            <h2>Đơn hàng của bạn</h2>
-            {products.filter((p) => cart[p.id]).map((p) => <div className="summary-line" key={p.id}><div><img src={p.image} alt=""/><b>{cart[p.id]}</b></div><span><small>{p.brand}</small>{p.name}</span><strong>{format(p.price * cart[p.id])}</strong></div>)}
-            <label className="voucher"><input placeholder="Mã ưu đãi"/><button type="button">ÁP DỤNG</button></label>
-            <div className="totals"><p><span>Tạm tính</span><b>{format(subtotal)}</b></p><p><span>Vận chuyển</span><b>{shipping ? format(shipping) : "Miễn phí"}</b></p><p className="grand"><span>Tổng cộng</span><b>{format(subtotal + shipping)}</b></p></div>
-          </aside>
-        </form>}
-      </div>}
+      <Footer/>
+      <ProductDetailModal product={selectedProduct} quantity={detailQty} setQuantity={setDetailQty} close={() => setSelectedProduct(null)} add={add} buyNow={buyNow} categoryOf={categoryOf} format={format}/>
+      <CartDrawer open={cartOpen} count={count} products={products} cart={cart} subtotal={subtotal} close={() => setCartOpen(false)} update={update} checkout={() => location.assign("/thanh-toan")} format={format}/>
     </main>
   );
 }

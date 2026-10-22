@@ -6,36 +6,48 @@
     "node": ">=22.13.0"
   },
   "scripts": {
-    "dev": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext dev",
-    "build": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext build",
-    "start": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
-    "test": "npm run build && node --test tests/rendered-html.test.mjs",
+    "dev": "vinext dev",
+    "build": "vinext build",
+    "start": "vinext start",
+    "test": "npm run build && npm run test:admin && npm run test:commerce && npm run test:e2e",
+    "test:csv": "node --experimental-strip-types --test tests/csv-import.test.ts",
+    "test:admin": "node --experimental-strip-types --test tests/csv-import.test.ts tests/login-rate-limit.test.ts",
+    "test:commerce": "node --experimental-strip-types --test tests/cart.test.ts tests/commerce.test.ts tests/password.test.ts",
+    "test:e2e": "playwright test",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "db:seed": "node --experimental-strip-types scripts/seed.ts"
   },
   "dependencies": {
+    "@auth/drizzle-adapter": "^1.11.3",
+    "@neondatabase/serverless": "^1.2.0",
+    "@radix-ui/react-tabs": "^1.2.1",
     "drizzle-orm": "0.45.2",
-    "next": "16.2.6",
-    "react": "19.2.6",
-    "react-dom": "19.2.6"
+    "lucide-react": "^1.59.0",
+    "next": "^16.4.2",
+    "next-auth": "^5.0.0-beta.32",
+    "postgres": "^3.4.9",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "1.37.1",
+    "@playwright/test": "^1.64.1",
     "@tailwindcss/postcss": "4.2.1",
     "@types/node": "22.19.19",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
-    "@vitejs/plugin-react": "6.0.2",
-    "@vitejs/plugin-rsc": "0.5.26",
+    "@vitejs/plugin-react": "^6.1.2",
+    "@vitejs/plugin-rsc": "^0.5.38",
     "drizzle-kit": "0.31.10",
     "eslint": "9.39.4",
-    "eslint-config-next": "16.2.6",
-    "react-server-dom-webpack": "19.2.6",
+    "eslint-config-next": "^16.4.2",
+    "react-server-dom-webpack": "^19.2.6",
     "tailwindcss": "4.2.1",
     "typescript": "5.9.3",
-    "vinext": "0.0.50",
-    "vite": "8.0.13",
-    "wrangler": "4.92.0"
+    "vinext": "^1.3.0",
+    "vite": "^8.3.5"
   },
   "type": "module"
 }

@@ -1,12 +1,22 @@
-import { getDb } from "../../../../db";
-import { products } from "../../../../db/schema";
+import { eq } from "drizzle-orm";
+import { hasAdminSession } from "@/app/admin-auth";
+import { productInputSchema } from "@/app/admin-products";
+import { openStoreDb } from "@/db/store";
+import { storeCategories, storeProducts } from "@/db/store-schema";
 
-export async function POST(request:Request){
-  const body=await request.json() as Record<string,string>;
-  if(!body.name||!body.brand||!body.sku) return Response.json({error:"Missing fields"},{status:400});
-  const [product]=await getDb().insert(products).values({
-    name:body.name.trim(),brand:body.brand.trim(),sku:body.sku.trim().toUpperCase(),
-    price:Number(body.price)||0,stock:Number(body.stock)||0,status:body.status==="draft"?"draft":"active",image:body.image||"",
-  }).returning();
-  return Response.json({product},{status:201});
+export async function POST(request: Request) {
+  if (!await hasAdminSession()) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  const parsed = productInputSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return Response.json({ error: parsed.error.issues.map((issue) => issue.message).join("; ") }, { status: 400 });
+  const { db, close } = openStoreDb();
+  try {
+    if (!(await db.select({ id: storeCategories.id }).from(storeCategories).where(eq(storeCategories.id, parsed.data.categoryId)).limit(1)).length) {
+      return Response.json({ error: "Danh mục không tồn tại" }, { status: 400 });
+    }
+    const [product] = await db.insert(storeProducts).values(parsed.data).returning();
+    return Response.json({ product }, { status: 201 });
+  } catch (error) {
+    if ((error as { code?: string }).code === "23505") return Response.json({ error: "Slug sản phẩm đã tồn tại" }, { status: 409 });
+    throw error;
+  } finally { await close(); }
 }

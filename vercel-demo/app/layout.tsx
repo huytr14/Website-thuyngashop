@@ -8,9 +8,10 @@ const display = Cormorant_Garamond({ variable: "--font-display", subsets: ["lati
 const sans = Montserrat({ variable: "--font-sans", subsets: ["latin", "vietnamese"], weight: ["400", "500", "600", "700"] });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://olala-select-store.vercel.app"),
   title: "THUYNGA Shop — Vẻ đẹp được chọn lọc",
-  description: "Bản demo cửa hàng mỹ phẩm cao cấp THUYNGA Shop.",
-  openGraph: { title: "THUYNGA Shop — Vẻ đẹp được chọn lọc", description: "Mỹ phẩm cao cấp chính hãng, tuyển chọn cho người phụ nữ hiện đại.", images: ["/thuynga-logo.png"] }
+  description: "Bản xem trước giao diện cửa hàng mỹ phẩm THUYNGA Shop với sản phẩm minh họa.",
+  openGraph: { title: "THUYNGA Shop — Vẻ đẹp được chọn lọc", description: "Bản xem trước giao diện cửa hàng mỹ phẩm THUYNGA Shop.", images: ["/thuynga-logo-wine.png"] }
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
