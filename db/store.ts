@@ -1,9 +1,12 @@
-import { asc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { Pool } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-serverless";
 import type { Product } from "@/catalog/products";
 import { categories as fallbackCategories, products as fallbackProducts } from "@/catalog/products";
-import { storeCategories, storeProducts, storeShopSettings } from "./store-schema";
+import { storeCategories, storeProducts, storeReviews, storeShopSettings, storeUsers } from "./store-schema";
+
+export type ReviewSummary = { count: number; average: number };
+export type ProductReview = { id: number; rating: number; title: string; content: string; customerName: string | null };
 
 export const defaultShopSettings = {
   id: 1, freeShippingThreshold: 1000000, standardShippingFee: 30000,
@@ -64,5 +67,25 @@ export async function getShopSettings() {
   const { db, close } = openStoreDb();
   try {
     return (await db.select().from(storeShopSettings).where(eq(storeShopSettings.id, 1)).limit(1))[0] ?? defaultShopSettings;
+  } finally { await close(); }
+}
+
+export async function getApprovedReviewSummaries(): Promise<Record<number, ReviewSummary>> {
+  if (!process.env.DATABASE_URL) return {};
+  const { db, close } = openStoreDb();
+  try {
+    const rows = await db.select({ productId: storeReviews.productId, count: sql<number>`count(*)::int`, average: sql<number>`round(avg(${storeReviews.rating})::numeric, 1)::float` })
+      .from(storeReviews).where(eq(storeReviews.status, "APPROVED")).groupBy(storeReviews.productId);
+    return Object.fromEntries(rows.map(({ productId, count, average }) => [productId, { count, average }]));
+  } finally { await close(); }
+}
+
+export async function getApprovedProductReviews(productId: number): Promise<ProductReview[]> {
+  if (!process.env.DATABASE_URL) return [];
+  const { db, close } = openStoreDb();
+  try {
+    return await db.select({ id: storeReviews.id, rating: storeReviews.rating, title: storeReviews.title, content: storeReviews.content, customerName: storeUsers.name })
+      .from(storeReviews).innerJoin(storeUsers, eq(storeReviews.userId, storeUsers.id))
+      .where(and(eq(storeReviews.productId, productId), eq(storeReviews.status, "APPROVED"))).orderBy(desc(storeReviews.createdAt));
   } finally { await close(); }
 }

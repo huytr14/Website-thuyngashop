@@ -10,11 +10,14 @@ type ProductDetailModalProps = {
   buyNow: (id: number, quantity: number) => void;
   categoryOf: (product: Product) => string;
   format: (value: number) => string;
+  policies: { shipping: string; returns: string; contact: string };
 };
 
-export default function ProductDetailModal({ product, quantity, setQuantity, close, add, buyNow, categoryOf, format }: ProductDetailModalProps) {
+const brief = (value: string) => value.trim().split(/\n|(?<=[.!?])\s/)[0];
+
+export default function ProductDetailModal({ product, quantity, setQuantity, close, add, buyNow, categoryOf, format, policies }: ProductDetailModalProps) {
   const [reviews, setReviews] = useState<{ id: number; rating: number; title: string; content: string; customerName: string | null }[]>([]);
-  useEffect(() => { if (product) fetch(`/api/products/${product.id}/reviews`).then((response) => response.json()).then((data) => setReviews(data.reviews ?? [])).catch(() => setReviews([])); }, [product]);
+  useEffect(() => { if (product) { setReviews([]); fetch(`/api/products/${product.id}/reviews`).then((response) => response.json()).then((data) => setReviews(data.reviews ?? [])).catch(() => setReviews([])); } }, [product]);
   if (!product) return null;
 
   return <div className="overlay product-overlay" onMouseDown={close}>
@@ -26,11 +29,14 @@ export default function ProductDetailModal({ product, quantity, setQuantity, clo
         <p className="eyebrow">{product.brand}</p>
         <h2>{product.name}</h2>
         <p className="detail-sku">Mã sản phẩm: TNG-{String(product.id).padStart(3, "0")}</p>
-        <div className="detail-price"><strong>{format(product.price)}</strong><del>{format(product.oldPrice)}</del><span>Tiết kiệm {Math.round((1 - product.price / product.oldPrice) * 100)}%</span></div>
-        <div className="detail-information"><h3>Thông tin sản phẩm</h3><p>Danh mục: {categoryOf(product)}</p><p>Mã tham khảo: TNG-{String(product.id).padStart(3, "0")}</p><p>Hình ảnh, giá bán, dung tích và mô tả chi tiết cần được xác nhận theo danh mục hàng thật trước khi vận hành.</p></div>
-        <div className="detail-quantity"><span>Số lượng</span><div className="qty"><button onClick={() => setQuantity(Math.max(1, quantity - 1))} aria-label="Giảm số lượng">−</button><span>{quantity}</span><button onClick={() => setQuantity(quantity + 1)} aria-label="Tăng số lượng">+</button></div></div>
-        <div className="detail-actions"><button className="add-detail" onClick={() => { add(product.id, quantity); close(); }}>THÊM VÀO TÚI</button><button className="buy-now" onClick={() => buyNow(product.id, quantity)}>MUA NGAY</button></div>
-        <div className="detail-benefits"><span>Giao hàng: tính ở bước thanh toán</span><span>Đổi trả và bảo hành: cập nhật theo chính sách cửa hàng khi vận hành</span><span>Tư vấn sản phẩm: thông tin liên hệ sẽ được bổ sung</span></div>
+        <p className="product-rating">{reviews.length ? <>★ {(reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)}</> : "☆☆☆☆☆"} <span>({reviews.length} lượt đánh giá)</span></p>
+        <p className="stock-state">{product.inStock ? "● Còn hàng" : "● Hết hàng"}</p>
+        <div className="detail-price"><strong>{format(product.price)}</strong>{product.oldPrice > product.price && <><del>{format(product.oldPrice)}</del><span>-{Math.round((1 - product.price / product.oldPrice) * 100)}%</span></>}</div>
+        <div className="detail-information"><h3>Thông tin sản phẩm</h3><p>Danh mục: {categoryOf(product)}</p>{product.shortDescription && <p>{product.shortDescription}</p>}</div>
+        <div className="detail-quantity"><span>Số lượng</span><div className="qty"><button onClick={() => setQuantity(Math.max(1, quantity - 1))} aria-label="Giảm số lượng">−</button><span>{quantity}</span><button onClick={() => setQuantity(Math.min(99, quantity + 1))} aria-label="Tăng số lượng">+</button></div></div>
+        <div className="detail-actions"><button className="add-detail" disabled={!product.inStock} onClick={() => { add(product.id, quantity); close(); }}>THÊM VÀO TÚI</button><button className="buy-now" disabled={!product.inStock} onClick={() => buyNow(product.id, quantity)}>MUA NGAY</button></div>
+        <a className="full-detail-link" href={`/san-pham/${product.slug}`}>Xem chi tiết đầy đủ →</a>
+        <div className="detail-benefits"><span>Giao hàng: {brief(policies.shipping)}</span><span>Đổi trả: {brief(policies.returns)}</span><span>Tư vấn: {brief(policies.contact)}</span></div>
         <div className="product-reviews"><h3>Đánh giá đã mua</h3>{reviews.map((review) => <article key={review.id}><b>{"★".repeat(review.rating)} {review.title}</b><p>{review.content}</p><small>{review.customerName ?? "Khách hàng"}</small></article>)}{!reviews.length && <p>Chưa có đánh giá được duyệt.</p>}</div>
       </div>
     </section>

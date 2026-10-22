@@ -9,12 +9,13 @@ import Hero from "@/components/storefront/Hero";
 import ProductDetailModal from "@/components/storefront/ProductDetailModal";
 import ProductGrid from "@/components/storefront/ProductGrid";
 import type { Product } from "@/components/storefront/types";
+import type { ReviewSummary } from "@/db/store";
 import { formatPrice as format } from "@/catalog/products";
 import { CART_STORAGE_KEY, parseCart, storeCart } from "@/lib/cart";
 
-type StorefrontProps = { products: Product[]; categories: string[] };
+type StorefrontProps = { products: Product[]; categories: string[]; reviewSummaries: Record<number, ReviewSummary>; policies: { shipping: string; returns: string; contact: string } };
 
-export default function Storefront({ products, categories }: StorefrontProps) {
+export default function Storefront({ products, categories, reviewSummaries, policies }: StorefrontProps) {
   const [cart, setCart] = useState<Record<number, number>>({});
   const [cartOpen, setCartOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -69,7 +70,7 @@ export default function Storefront({ products, categories }: StorefrontProps) {
     <main>
       <Header menuOpen={menuOpen} searchOpen={searchOpen} query={query} count={count} setMenuOpen={setMenuOpen} setSearchOpen={setSearchOpen} setQuery={setQuery} setCategory={setCategory} openCart={() => setCartOpen(true)}/>
       <Hero heroIndex={heroIndex} setHeroIndex={setHeroIndex}/>
-      <ProductGrid categories={categories} category={category} sort={sort} query={query} filtered={filtered} visibleProducts={visibleProducts} showAllProducts={showAllProducts} setCategory={setCategory} setSort={setSort} setShowAllProducts={setShowAllProducts} openProduct={openProduct} buyNow={buyNow} format={format}/>
+      <ProductGrid categories={categories} category={category} sort={sort} query={query} filtered={filtered} visibleProducts={visibleProducts} showAllProducts={showAllProducts} setCategory={setCategory} setSort={setSort} setShowAllProducts={setShowAllProducts} openProduct={openProduct} buyNow={buyNow} format={format} reviewSummaries={reviewSummaries}/>
 
       <section className="feature-banner">
         <div><p>THUYNGA BEAUTY EDIT</p><h2>Mỗi ngày là một<br/><em>khoảnh khắc đẹp.</em></h2><span>Một chút chăm sóc, một chút sắc màu — để bạn luôn là phiên bản mình yêu thích.</span><a href="#new-arrivals">KHÁM PHÁ THÊM <ArrowUpRight size={16}/></a></div>
@@ -93,8 +94,8 @@ export default function Storefront({ products, categories }: StorefrontProps) {
         <div className="new-grid">
           {products.slice(16, 24).map((p, index) => <article className="new-card" key={p.id}>
             <div className="new-index">0{index + 1}</div>
-            <button className="new-image-open" onClick={() => openProduct(p)} aria-label={`Xem chi tiết ${p.name}`}><img src={p.image} alt={p.name} loading="lazy"/></button>
-            <div><p>{p.brand}</p><h3><button className="product-link" onClick={() => openProduct(p)}>{p.name}</button></h3><strong>{format(p.price)}</strong><button onClick={() => add(p.id)} aria-label={`Thêm ${p.name} vào túi`}><ShoppingBag size={16}/></button></div>
+            <a className="new-image-open" href={`/san-pham/${p.slug}`} aria-label={`Xem chi tiết ${p.name}`}><img src={p.image} alt={p.name} loading="lazy"/></a>
+            <div><p>{p.brand}</p><h3><a className="product-link" href={`/san-pham/${p.slug}`}>{p.name}</a></h3>{reviewSummaries[p.id] && <p className="product-rating">★ {reviewSummaries[p.id].average.toLocaleString("vi-VN")} ({reviewSummaries[p.id].count})</p>}<strong>{format(p.price)}</strong><button onClick={() => add(p.id)} aria-label={`Thêm ${p.name} vào túi`}><ShoppingBag size={16}/></button></div>
           </article>)}
         </div>
       </section>
@@ -106,8 +107,8 @@ export default function Storefront({ products, categories }: StorefrontProps) {
         </div>
         <div className="price-edit-grid">
           {products.filter((p) => p.price < 1000000).slice(0, 6).map((p) => <article className="price-edit-card" key={p.id}>
-            <button className="price-edit-image" onClick={() => openProduct(p)} aria-label={`Xem chi tiết ${p.name}`}><img src={p.image} alt={p.name} loading="lazy"/></button>
-            <div><small>{p.brand}</small><h3><button className="product-link" onClick={() => openProduct(p)}>{p.name}</button></h3><strong>{format(p.price)}</strong><button className="price-edit-buy" onClick={() => buyNow(p.id)}>MUA NGAY <ArrowUpRight size={13}/></button></div>
+            <a className="price-edit-image" href={`/san-pham/${p.slug}`} aria-label={`Xem chi tiết ${p.name}`}><img src={p.image} alt={p.name} loading="lazy"/></a>
+            <div><small>{p.brand}</small><h3><a className="product-link" href={`/san-pham/${p.slug}`}>{p.name}</a></h3>{reviewSummaries[p.id] && <p className="product-rating">★ {reviewSummaries[p.id].average.toLocaleString("vi-VN")} ({reviewSummaries[p.id].count})</p>}<strong>{format(p.price)}</strong><button className="price-edit-buy" onClick={() => buyNow(p.id)}>MUA NGAY <ArrowUpRight size={13}/></button></div>
           </article>)}
         </div>
       </section>
@@ -131,7 +132,7 @@ export default function Storefront({ products, categories }: StorefrontProps) {
       </section>
 
       <Footer/>
-      <ProductDetailModal product={selectedProduct} quantity={detailQty} setQuantity={setDetailQty} close={() => setSelectedProduct(null)} add={add} buyNow={buyNow} categoryOf={categoryOf} format={format}/>
+      <ProductDetailModal product={selectedProduct} quantity={detailQty} setQuantity={setDetailQty} close={() => setSelectedProduct(null)} add={add} buyNow={buyNow} categoryOf={categoryOf} format={format} policies={policies}/>
       <CartDrawer open={cartOpen} count={count} products={products} cart={cart} subtotal={subtotal} close={() => setCartOpen(false)} update={update} checkout={() => location.assign("/thanh-toan")} format={format}/>
     </main>
   );

@@ -5,7 +5,7 @@ import "./homepage.css";
 import "./brand.css";
 import "./public-pages.css";
 
-const display = Cormorant_Garamond({ variable: "--font-display", subsets: ["latin"], weight: ["400","500","600"] });
+const display = Cormorant_Garamond({ variable: "--font-display", subsets: ["latin","vietnamese"], weight: ["400","500","600"] });
 const sans = Montserrat({ variable: "--font-sans", subsets: ["latin","vietnamese"], weight: ["400","500","600","700"] });
 
 export function generateMetadata(): Metadata {

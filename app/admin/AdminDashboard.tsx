@@ -128,7 +128,7 @@ export default function AdminDashboard() {
       <a href="/" className={styles.logo}><img src="/thuynga-logo-wine.png" alt="THUYNGA Shop"/></a>
       <p>ADMIN CONSOLE</p>
       <nav className={styles.adminNav}>
-        <button className={view === "products" ? styles.activeNav : ""} onClick={() => setView("products")}>Sản phẩm <small>{products.length}</small></button>
+        <button className={view === "products" ? styles.activeNav : ""} onClick={() => setView("products")}>Sản phẩm {!loading && <small>{products.length}</small>}</button>
         <button className={view === "orders" ? styles.activeNav : ""} onClick={() => setView("orders")}>Đơn hàng <small>{orders.length}</small></button>
         <button className={view === "settings" ? styles.activeNav : ""} onClick={() => setView("settings")}>Cấu hình</button>
         <a href="/admin/tin-tuc">Tin tức</a><a href="/admin/danh-gia">Đánh giá</a>
@@ -147,8 +147,8 @@ export default function AdminDashboard() {
       </section>
 
       <section className={styles.panel}>
-        <div className={styles.toolbar}><label>⌕<input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Tìm theo tên sản phẩm..."/></label><span>{filtered.length} sản phẩm</span></div>
-        {loading ? <div className={styles.loading}>Đang tải sản phẩm...</div> : <div className={styles.productTable}>
+        <div className={styles.toolbar}><label>⌕<input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Tìm theo tên sản phẩm..."/></label>{!loading && <span>{filtered.length} sản phẩm</span>}</div>
+        {loading ? <div className={styles.productSkeleton} aria-label="Đang tải sản phẩm" role="status">{Array.from({ length: 5 }, (_, index) => <div className={styles.skeletonRow} key={index}><span/><span/><span/><span/></div>)}</div> : <div className={styles.productTable}>
           <div className={styles.tableHeader}><span>SẢN PHẨM</span><span>DANH MỤC</span><span>GIÁ</span><span>TỒN KHO</span><span>THAO TÁC</span></div>
           {filtered.map((product) => <div className={styles.productRow} key={product.id}>
             <span><img src={product.image} alt=""/><i><b>{product.name}</b><small>{product.brand} · /{product.slug}</small></i></span>

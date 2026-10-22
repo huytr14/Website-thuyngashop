@@ -1,6 +1,7 @@
 import { ArrowRight, ArrowUpRight, ShoppingBag } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Product } from "./types";
+import type { ReviewSummary } from "@/db/store";
 
 type ProductGridProps = {
   categories: string[];
@@ -16,9 +17,10 @@ type ProductGridProps = {
   openProduct: (product: Product) => void;
   buyNow: (id: number) => void;
   format: (value: number) => string;
+  reviewSummaries: Record<number, ReviewSummary>;
 };
 
-export default function ProductGrid({ categories, category, sort, query, filtered, visibleProducts, showAllProducts, setCategory, setSort, setShowAllProducts, openProduct, buyNow, format }: ProductGridProps) {
+export default function ProductGrid({ categories, category, sort, query, filtered, visibleProducts, showAllProducts, setCategory, setSort, setShowAllProducts, openProduct, buyNow, format, reviewSummaries }: ProductGridProps) {
   return <section className="products section product-first" id="deals">
     <div className="shop-heading">
       <div><span className="section-overline">01 / BỘ SƯU TẬP MỸ PHẨM</span><h2>KHÁM PHÁ SẢN PHẨM</h2><p>30 lựa chọn chăm sóc da, trang điểm và tóc — chọn món yêu thích, xem chi tiết và mua ngay.</p></div>
@@ -32,14 +34,15 @@ export default function ProductGrid({ categories, category, sort, query, filtere
         <article className="product" id={`san-pham-${p.id}`} key={p.id}>
           <div className="product-image">
             {p.badge && <span className="product-badge">{p.badge}</span>}
-            <span className="discount">-{Math.round((1 - p.price / p.oldPrice) * 100)}%</span>
-            <button className="image-open" onClick={() => openProduct(p)} aria-label={`Xem chi tiết ${p.name}`}><img src={p.image} alt={p.name} loading="lazy" /></button>
+            {p.oldPrice > p.price && <span className="discount">-{Math.round((1 - p.price / p.oldPrice) * 100)}%</span>}
+            <a className="image-open" href={`/san-pham/${p.slug}`} aria-label={`Xem chi tiết ${p.name}`}><img src={p.image} alt={p.name} loading="lazy" /></a>
             <button className="card-buy" onClick={() => buyNow(p.id)}><ShoppingBag size={13}/> MUA NGAY</button>
           </div>
           <p className="product-brand">{p.brand}</p>
-          <h3><button className="product-link" onClick={() => openProduct(p)}>{p.name}</button></h3>
+          <h3><a className="product-link" href={`/san-pham/${p.slug}`}>{p.name}</a></h3>
+          {reviewSummaries[p.id] && <p className="product-rating" aria-label={`${reviewSummaries[p.id].average} trên 5 sao, ${reviewSummaries[p.id].count} lượt đánh giá`}>★ {reviewSummaries[p.id].average.toLocaleString("vi-VN")} <span>({reviewSummaries[p.id].count})</span></p>}
           <div className="price"><strong>{format(p.price)}</strong><del>{format(p.oldPrice)}</del></div>
-          <button className="product-detail-link" onClick={() => openProduct(p)}>Xem chi tiết <ArrowUpRight size={13}/></button>
+          <button className="product-detail-link" onClick={() => openProduct(p)}>Xem nhanh <ArrowUpRight size={13}/></button>
         </article>
       ))}
     </div>
