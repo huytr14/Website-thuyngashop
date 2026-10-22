@@ -1,0 +1,70 @@
+import { eq, inArray, sql } from "drizzle-orm";
+import { z } from "zod";
+import { checkoutSchema } from "@/app/checkout-schema";
+import { checkoutRateLimited, requestClient } from "@/app/checkout-rate-limit";
+import { sendOrderEmails } from "@/app/order-email";
+import { defaultShopSettings, openStoreDb } from "@/db/store";
+import { storeOrderItems, storeOrders, storeProducts, storeShopSettings, storeVouchers } from "@/db/store-schema";
+import { orderCode, shippingFee, voucherDiscount, voucherError, type VoucherRule } from "@/lib/commerce";
+import { getCustomer } from "@/app/customer-session";
+
+const idempotencySchema = z.string().uuid();
+
+export async function POST(request: Request) {
+  if (checkoutRateLimited(`order:${requestClient(request)}`)) return Response.json({ error: "Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau." }, { status: 429 });
+  const key = idempotencySchema.safeParse(request.headers.get("idempotency-key"));
+  const input = checkoutSchema.safeParse(await request.json().catch(() => null));
+  if (!key.success || !input.success) return Response.json({ error: input.success ? "Thiếu mã chống trùng đơn" : input.error.issues[0]?.message ?? "Dữ liệu đặt hàng không hợp lệ" }, { status: 400 });
+
+  const customer = await getCustomer(request);
+  const { db, close } = openStoreDb();
+  try {
+    const existing = (await db.select({ code: storeOrders.code, total: storeOrders.total, paymentMethod: storeOrders.paymentMethod }).from(storeOrders).where(eq(storeOrders.idempotencyKey, key.data)).limit(1))[0];
+    if (existing) return Response.json({ order: existing, duplicate: true });
+
+    let result: { order: typeof storeOrders.$inferSelect; shopEmail: string } | undefined;
+    for (let attempt = 0; attempt < 5 && !result; attempt++) try {
+      result = await db.transaction(async (tx) => {
+      const products = await tx.select({ id: storeProducts.id, name: storeProducts.name, price: storeProducts.price, inStock: storeProducts.inStock }).from(storeProducts).where(inArray(storeProducts.id, input.data.items.map(({ productId }) => productId)));
+      if (products.length !== input.data.items.length || products.some(({ inStock }) => !inStock)) throw new OrderInputError("Có sản phẩm không tồn tại hoặc đã hết hàng");
+      const subtotal = input.data.items.reduce((sum, item) => sum + products.find(({ id }) => id === item.productId)!.price * item.quantity, 0);
+      const settings = (await tx.select().from(storeShopSettings).where(eq(storeShopSettings.id, 1)).limit(1))[0] ?? defaultShopSettings;
+      const shipping = shippingFee(subtotal, settings.freeShippingThreshold, settings.standardShippingFee);
+      const voucher = input.data.voucherCode ? (await tx.select().from(storeVouchers).where(eq(storeVouchers.code, input.data.voucherCode)).for("update").limit(1))[0] : undefined;
+      const error = input.data.voucherCode ? voucherError(voucher as VoucherRule | undefined, subtotal) : null;
+      if (error) throw new OrderInputError(error);
+      const discount = voucherDiscount(voucher as VoucherRule | null, subtotal, shipping);
+      const total = subtotal + shipping - discount;
+      const [order] = await tx.insert(storeOrders).values({
+        code: orderCode(), idempotencyKey: key.data, customerName: input.data.customerName, email: input.data.email,
+        phone: input.data.phone, address: input.data.address, city: input.data.city, district: input.data.district,
+        note: input.data.note || null, subtotal, shippingFee: shipping, discount, total,
+        voucherCode: voucher?.code ?? null, paymentMethod: input.data.paymentMethod, customerId: customer?.id ?? null,
+      }).returning();
+      await tx.insert(storeOrderItems).values(input.data.items.map((item) => {
+        const product = products.find(({ id }) => id === item.productId)!;
+        return { orderId: order.id, productId: product.id, productName: product.name, price: product.price, quantity: item.quantity };
+      }));
+      if (voucher) await tx.update(storeVouchers).set({ usedCount: sql`${storeVouchers.usedCount} + 1` }).where(eq(storeVouchers.id, voucher.id));
+        return { order, shopEmail: settings.shopEmail };
+      });
+    } catch (error) {
+      if ((error as { constraint_name?: string }).constraint_name !== "orders_code_unique" || attempt === 4) throw error;
+    }
+    if (!result) throw new Error("Không thể tạo mã đơn hàng");
+
+    try {
+      await sendOrderEmails({ code: result.order.code, customerName: result.order.customerName, customerEmail: result.order.email, total: result.order.total, shopEmail: result.shopEmail });
+    } catch { console.error(`[email] Failed to send notifications for order ${result.order.code}`); }
+    return Response.json({ order: { code: result.order.code, total: result.order.total, paymentMethod: result.order.paymentMethod } }, { status: 201 });
+  } catch (error) {
+    if (error instanceof OrderInputError) return Response.json({ error: error.message }, { status: 400 });
+    if ((error as { code?: string }).code === "23505") {
+      const existing = (await db.select({ code: storeOrders.code, total: storeOrders.total, paymentMethod: storeOrders.paymentMethod }).from(storeOrders).where(eq(storeOrders.idempotencyKey, key.data)).limit(1))[0];
+      if (existing) return Response.json({ order: existing, duplicate: true });
+    }
+    throw error;
+  } finally { await close(); }
+}
+
+class OrderInputError extends Error {}
