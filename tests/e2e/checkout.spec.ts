@@ -88,3 +88,26 @@ test("font Cormorant hiển thị dấu tiếng Việt", async ({ page }) => {
   });
   for (const sample of samples) { expect(sample.faces).toBeGreaterThan(0); expect(sample.width).toBeGreaterThan(0); }
 });
+
+test("header trang chi tiết giữ tìm kiếm, giỏ hàng và ẩn sao khi chưa có đánh giá", async ({ page }) => {
+  const sql = postgres(process.env.DATABASE_URL!, { prepare: false });
+  let slug: string;
+  try {
+    const rows = await sql<{ slug: string }[]>`select p.slug from products p where not exists (select 1 from reviews r where r.product_id = p.id and r.status = 'APPROVED') limit 1`;
+    slug = rows[0].slug;
+  } finally { await sql.end(); }
+  await page.goto(`/san-pham/${slug}`);
+  await expect(page.locator(".header .search input")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Mở túi hàng, 0 sản phẩm" })).toBeVisible();
+  await expect(page.locator(".product-buy-panel .product-rating")).toHaveCount(0);
+  await expect(page.getByText("Chưa có đánh giá được duyệt.")).toBeVisible();
+  await page.getByRole("button", { name: "THÊM VÀO TÚI" }).click();
+  await expect(page.getByRole("button", { name: "Mở túi hàng, 1 sản phẩm" })).toBeVisible();
+  await page.locator(".drawer-head button").click();
+  await page.locator(".header .search input").fill("Shiseido");
+  await page.locator(".header .search input").press("Enter");
+  await expect(page).toHaveURL(/\/\?q=Shiseido#deals$/);
+  await expect(page.locator(".product").first()).toContainText(/Shiseido/i);
+  await page.locator(".product-detail-link").first().click();
+  await expect(page.getByRole("dialog").locator(".product-rating")).toHaveCount(0);
+});

@@ -31,7 +31,11 @@ export default function Storefront({ products, categories, reviewSummaries, poli
   useEffect(() => {
     const available = new Set(products.map(({ id }) => id));
     setCart(Object.fromEntries(Object.entries(parseCart(localStorage.getItem(CART_STORAGE_KEY))).filter(([id]) => available.has(Number(id)))));
-  }, [products]);
+    const params = new URLSearchParams(location.search);
+    setQuery(params.get("q") ?? "");
+    const requestedCategory = params.get("category");
+    setCategory(requestedCategory && categories.includes(requestedCategory) ? requestedCategory : "Tất cả");
+  }, [products, categories]);
 
   const categoryOf = (product: Product) => product.category;
   const filtered = products.filter((p) =>

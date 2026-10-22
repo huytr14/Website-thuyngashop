@@ -29,7 +29,7 @@ export default function ProductDetailModal({ product, quantity, setQuantity, clo
         <p className="eyebrow">{product.brand}</p>
         <h2>{product.name}</h2>
         <p className="detail-sku">Mã sản phẩm: TNG-{String(product.id).padStart(3, "0")}</p>
-        <p className="product-rating">{reviews.length ? <>★ {(reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)}</> : "☆☆☆☆☆"} <span>({reviews.length} lượt đánh giá)</span></p>
+        {reviews.length > 0 && <p className="product-rating">★ {(reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)} <span>({reviews.length} lượt đánh giá)</span></p>}
         <p className="stock-state">{product.inStock ? "● Còn hàng" : "● Hết hàng"}</p>
         <div className="detail-price"><strong>{format(product.price)}</strong>{product.oldPrice > product.price && <><del>{format(product.oldPrice)}</del><span>-{Math.round((1 - product.price / product.oldPrice) * 100)}%</span></>}</div>
         <div className="detail-information"><h3>Thông tin sản phẩm</h3><p>Danh mục: {categoryOf(product)}</p>{product.shortDescription && <p>{product.shortDescription}</p>}</div>

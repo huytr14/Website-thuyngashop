@@ -6,6 +6,8 @@ import { formatPrice } from "@/catalog/products";
 import type { ProductReview, ReviewSummary } from "@/db/store";
 import { CART_STORAGE_KEY, parseCart, storeCart } from "@/lib/cart";
 import CartDrawer from "@/components/storefront/CartDrawer";
+import Footer from "@/components/storefront/Footer";
+import Header from "@/components/storefront/Header";
 
 type Props = { product: Product; products: Product[]; related: Product[]; reviews: ProductReview[]; summaries: Record<number, ReviewSummary> };
 
@@ -15,6 +17,9 @@ export default function ProductPageClient({ product, products, related, reviews,
   const [quantity, setQuantity] = useState(1);
   const [cart, setCart] = useState<Record<number, number>>({});
   const [cartOpen, setCartOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState("");
   useEffect(() => { setCart(parseCart(localStorage.getItem(CART_STORAGE_KEY))); }, []);
   const descriptionLines = product.description.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
   const usageLines = descriptionLines.filter((line) => /^(thành phần|cách dùng)\s*:/i.test(line));
@@ -29,7 +34,7 @@ export default function ProductPageClient({ product, products, related, reviews,
     if (checkout) location.assign("/thanh-toan"); else setCartOpen(true);
   };
 
-  return <div className="product-page">
+  return <><Header menuOpen={menuOpen} searchOpen={searchOpen} query={query} count={count} setMenuOpen={setMenuOpen} setSearchOpen={setSearchOpen} setQuery={setQuery} setCategory={() => {}} openCart={() => setCartOpen(true)} browseFromProduct/><main className="public-page"><div className="product-page">
     <nav className="product-breadcrumb" aria-label="Đường dẫn"><a href="/">Trang chủ</a> / <a href="/#deals">Sản phẩm</a> / {product.name}</nav>
     <div className="product-page-top">
       <div className="product-gallery">
@@ -38,7 +43,7 @@ export default function ProductPageClient({ product, products, related, reviews,
       </div>
       <aside className="product-buy-panel">
         <p className="eyebrow">{product.brand}</p><h1>{product.name}</h1>
-        <p className="product-rating" aria-label={summaries[product.id] ? `${summaries[product.id].average} trên 5 sao, ${summaries[product.id].count} lượt đánh giá` : "Chưa có đánh giá"}>{summaries[product.id] ? <>★ {summaries[product.id].average.toLocaleString("vi-VN")}</> : "☆☆☆☆☆"} <span>({summaries[product.id]?.count ?? 0} lượt đánh giá)</span></p>
+        {summaries[product.id]?.count > 0 && <p className="product-rating" aria-label={`${summaries[product.id].average} trên 5 sao, ${summaries[product.id].count} lượt đánh giá`}>★ {summaries[product.id].average.toLocaleString("vi-VN")} <span>({summaries[product.id].count} lượt đánh giá)</span></p>}
         <div className="detail-price"><strong>{formatPrice(product.price)}</strong>{product.oldPrice > product.price && <><del>{formatPrice(product.oldPrice)}</del><span>-{Math.round((1 - product.price / product.oldPrice) * 100)}%</span></>}</div>
         {product.variant && <div className="product-variant"><span>Biến thể</span><button type="button" className="selected" aria-pressed="true">{product.variant}</button></div>}
         <div className="detail-quantity"><span>Số lượng</span><div className="qty"><button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))} aria-label="Giảm số lượng">−</button><span>{quantity}</span><button type="button" onClick={() => setQuantity(Math.min(99, quantity + 1))} aria-label="Tăng số lượng">+</button></div></div>
@@ -51,6 +56,5 @@ export default function ProductPageClient({ product, products, related, reviews,
     <section className="product-page-section"><h2>Thông số sản phẩm</h2><dl className="product-specs"><dt>Thương hiệu</dt><dd>{product.brand}</dd><dt>Danh mục</dt><dd>{product.category}</dd>{product.variant && <><dt>Biến thể</dt><dd>{product.variant}</dd></>}<dt>Mã sản phẩm</dt><dd>TNG-{String(product.id).padStart(3, "0")}</dd></dl></section>
     <section className="product-page-section"><h2>Đánh giá đã duyệt</h2>{reviews.length ? reviews.map((review) => <article className="product-review" key={review.id}><strong>{"★".repeat(review.rating)} · {review.title}</strong><p>{review.content}</p><small>{review.customerName ?? "Khách hàng"}</small></article>) : <p>Chưa có đánh giá được duyệt.</p>}</section>
     {related.length > 0 && <section className="product-page-section"><h2>Sản phẩm liên quan</h2><div className="related-products">{related.map((item) => <article key={item.id}><a href={`/san-pham/${item.slug}`}><div className="related-image"><img src={item.image} alt={item.name} loading="lazy"/></div><h3>{item.name}</h3></a>{summaries[item.id] && <p className="product-rating">★ {summaries[item.id].average.toLocaleString("vi-VN")} ({summaries[item.id].count})</p>}<strong>{formatPrice(item.price)}</strong></article>)}</div></section>}
-    <CartDrawer open={cartOpen} count={count} products={products} cart={cart} subtotal={subtotal} close={() => setCartOpen(false)} update={update} checkout={() => location.assign("/thanh-toan")} format={formatPrice}/>
-  </div>;
+  </div></main><Footer/><CartDrawer open={cartOpen} count={count} products={products} cart={cart} subtotal={subtotal} close={() => setCartOpen(false)} update={update} checkout={() => location.assign("/thanh-toan")} format={formatPrice}/></>;
 }

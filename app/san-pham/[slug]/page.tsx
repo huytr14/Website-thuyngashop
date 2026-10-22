@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import PublicPage from "@/components/PublicPage";
 import { getApprovedProductReviews, getApprovedReviewSummaries, getStoreCatalog } from "@/db/store";
 import ProductPageClient from "./ProductPageClient";
 
@@ -19,5 +18,5 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   if (!product) notFound();
   const [reviews, summaries] = await Promise.all([getApprovedProductReviews(product.id), getApprovedReviewSummaries()]);
   const related = catalog.products.filter((item) => item.category === product.category && item.id !== product.id).slice(0, 4);
-  return <PublicPage><ProductPageClient product={product} products={catalog.products} related={related} reviews={reviews} summaries={summaries}/></PublicPage>;
+  return <ProductPageClient product={product} products={catalog.products} related={related} reviews={reviews} summaries={summaries}/>;
 }
