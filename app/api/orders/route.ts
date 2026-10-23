@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     const existing = (await db.select({ code: storeOrders.code, total: storeOrders.total, paymentMethod: storeOrders.paymentMethod }).from(storeOrders).where(eq(storeOrders.idempotencyKey, key.data)).limit(1))[0];
     if (existing) return Response.json({ order: existing, duplicate: true });
 
-    let result: { order: typeof storeOrders.$inferSelect; shopEmail: string } | undefined;
+    let result: { order: typeof storeOrders.$inferSelect; shopEmail: string; bankName: string; bankAccountName: string; bankAccountNumber: string; items: { productName: string; variantName: string | null; price: number; quantity: number }[] } | undefined;
     for (let attempt = 0; attempt < 5 && !result; attempt++) try {
       result = await db.transaction(async (tx) => {
       const products = await tx.select().from(storeProducts).where(inArray(storeProducts.id, input.data.items.map(({ productId }) => productId))).orderBy(asc(storeProducts.id)).for("update");
@@ -49,11 +49,12 @@ export async function POST(request: Request) {
         note: input.data.note || null, subtotal, shippingFee: shipping, discount, total,
         voucherCode: voucher?.code ?? null, paymentMethod: input.data.paymentMethod, customerId: customer?.id ?? null,
       }).returning();
-      await tx.insert(storeOrderItems).values(input.data.items.map((item) => {
+      const orderItems = input.data.items.map((item) => {
         const product = products.find(({ id }) => id === item.productId)!;
         const line = pricedLine(product, item.variantName, settings, now)!;
         return { orderId: order.id, productId: product.id, productName: product.name, variantName: line.variantName, price: line.price, quantity: item.quantity, inventoryDeducted: product.trackInventory, flashStockDeducted: line.flashApplied && product.flashStock !== null };
-      }));
+      });
+      await tx.insert(storeOrderItems).values(orderItems);
       for (const product of products) {
         const ordered = input.data.items.filter((item) => item.productId === product.id);
         const quantity = ordered.reduce((sum, item) => sum + item.quantity, 0);
@@ -63,7 +64,7 @@ export async function POST(request: Request) {
         await tx.update(storeProducts).set({ inventoryQuantity, variantRows: product.trackInventory ? variantRows : product.variantRows, flashStock: product.flashStock === null ? null : product.flashStock - flashQuantity, inStock: product.trackInventory ? inventoryQuantity > 0 && (!variantRows.length || variantRows.some((row) => row.quantity > 0)) : product.inStock }).where(eq(storeProducts.id, product.id));
       }
       if (voucher) await tx.update(storeVouchers).set({ usedCount: sql`${storeVouchers.usedCount} + 1` }).where(eq(storeVouchers.id, voucher.id));
-        return { order, shopEmail: settings.shopEmail };
+        return { order, shopEmail: settings.shopEmail, bankName: settings.bankName, bankAccountName: settings.bankAccountName, bankAccountNumber: settings.bankAccountNumber, items: orderItems };
       });
     } catch (error) {
       if ((error as { constraint_name?: string }).constraint_name !== "orders_code_unique" || attempt === 4) throw error;
@@ -72,7 +73,7 @@ export async function POST(request: Request) {
     revalidatePath("/"); revalidatePath("/san-pham/[slug]", "page");
 
     try {
-      await sendOrderEmails({ code: result.order.code, customerName: result.order.customerName, customerEmail: result.order.email, total: result.order.total, shopEmail: result.shopEmail });
+      await sendOrderEmails({ code: result.order.code, customerName: result.order.customerName, customerEmail: result.order.email, total: result.order.total, shopEmail: result.shopEmail, paymentMethod: result.order.paymentMethod, bankName: result.bankName, bankAccountName: result.bankAccountName, bankAccountNumber: result.bankAccountNumber, items: result.items });
     } catch { console.error(`[email] Failed to send notifications for order ${result.order.code}`); }
     return Response.json({ order: { code: result.order.code, total: result.order.total, paymentMethod: result.order.paymentMethod } }, { status: 201 });
   } catch (error) {

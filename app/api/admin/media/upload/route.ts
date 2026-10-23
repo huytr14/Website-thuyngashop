@@ -24,7 +24,10 @@ export async function POST(request: Request) {
         dimensions = { width: info.width, height: info.height };
       } catch { errors.push(`${file.name}: ảnh bị lỗi hoặc không đọc được`); continue; }
       const saved = await mediaStorage.save(file);
-      try { const [row] = await db.insert(storeMedia).values({ ...saved, ...dimensions, alt: file.name, mime: file.type, sizeBytes: file.size }).returning(); media.push(row); }
+      try {
+        for (const width of [480, 800, 1200]) await mediaStorage.saveVariant(saved.storageKey, width, await sharp(bytes).rotate().resize({ width }).webp({ quality: 80 }).toBuffer());
+        const [row] = await db.insert(storeMedia).values({ ...saved, ...dimensions, alt: file.name, mime: file.type, sizeBytes: file.size }).returning(); media.push(row);
+      }
       catch { await mediaStorage.delete(saved.storageKey); errors.push(`${file.name}: không thể lưu vào kho`); }
     }
     return Response.json({ media, errors }, { status: media.length ? 200 : 400 });

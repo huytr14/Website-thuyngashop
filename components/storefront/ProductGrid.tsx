@@ -5,6 +5,7 @@ import type { ReviewSummary } from "@/db/store";
 import { defaultSiteContent, type SiteContent } from "@/lib/site-content";
 import { flashActive } from "@/lib/product-pricing";
 import { useWishlist } from "@/lib/wishlist";
+import { responsiveImage } from "@/lib/responsive-image";
 
 type ProductGridProps = {
   categories: string[];
@@ -37,7 +38,7 @@ export function ProductCard({ product: p, summary, flashSettings = {}, format, l
       {badge && <span className="product-badge">{badge}</span>}
       {oldPrice > price && <span className="discount">-{Math.round((1 - price / oldPrice) * 100)}%</span>}
       {!p.inStock && <span className="sold-out-badge">Hết hàng</span>}
-      <a className="image-open" href={`/san-pham/${p.slug}`} aria-label={`Xem chi tiết ${p.name}`}><img src={p.image} alt={`${p.brand} ${p.name}`} loading="lazy"/></a>
+      <a className="image-open" href={`/san-pham/${p.slug}`} aria-label={`Xem chi tiết ${p.name}`}><img src={p.image} {...responsiveImage(p.image, "(max-width: 767px) 50vw, 25vw")} alt={`${p.brand} ${p.name}`} width={480} height={480} loading="lazy"/></a>
       <button className="card-buy" disabled={!p.inStock} onClick={buyNow}><ShoppingBag size={13}/> MUA NGAY</button>
     </div>
     <p className="product-brand">{p.brand}</p>

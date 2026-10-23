@@ -11,7 +11,8 @@ import type { SiteContent } from "@/lib/site-content";
 type Settings = { freeShippingThreshold: number; standardShippingFee: number; bankName: string; bankAccountName: string; bankAccountNumber: string; vietQrUrl: string; flashSaleStart?: Date | string | null; flashSaleEnd?: Date | string | null };
 type Quote = { subtotal: number; shipping: number; discount: number; total: number; voucherCode: string };
 
-export default function CheckoutPage({ products, settings, site }: { products: Product[]; settings: Settings; site: SiteContent }) {
+type Prefill = { email: string; customerName: string; phone: string; address: string; city: string; district: string };
+export default function CheckoutPage({ products, settings, site, prefill }: { products: Product[]; settings: Settings; site: SiteContent; prefill?: Prefill }) {
   const [cart, setCart] = useState<Record<string, number>>({});
   const [loaded, setLoaded] = useState(false);
   const [payment, setPayment] = useState<"COD" | "BANK_TRANSFER">("COD");
@@ -71,12 +72,12 @@ export default function CheckoutPage({ products, settings, site }: { products: P
         <div className="checkout-steps"><b>1 Thông tin</b><span>2 Vận chuyển</span><span>3 Thanh toán</span></div>
         <h2>Thông tin giao hàng</h2>
         <div className="field-grid">
-          <label className="full"><span>Email</span><input name="email" type="email" required maxLength={255} placeholder="hello@example.com"/></label>
-          <label><span>Họ và tên</span><input name="customerName" required minLength={2} maxLength={150} placeholder="Nguyễn Minh Anh"/></label>
-          <label><span>Số điện thoại</span><input name="phone" required inputMode="numeric" pattern="0[0-9]{8,10}" placeholder="0901234567"/></label>
-          <label className="full"><span>Địa chỉ</span><input name="address" required minLength={5} maxLength={500} placeholder="Số nhà, tên đường"/></label>
-          <label><span>Tỉnh / Thành phố</span><input name="city" required maxLength={100} placeholder="TP. Hồ Chí Minh"/></label>
-          <label><span>Quận / Huyện</span><input name="district" required maxLength={100} placeholder="Quận / Huyện"/></label>
+          <label className="full"><span>Email</span><input name="email" type="email" required maxLength={255} defaultValue={prefill?.email} placeholder="hello@example.com"/></label>
+          <label><span>Họ và tên</span><input name="customerName" required minLength={2} maxLength={150} defaultValue={prefill?.customerName} placeholder="Nguyễn Minh Anh"/></label>
+          <label><span>Số điện thoại</span><input name="phone" required inputMode="numeric" pattern="0[0-9]{8,10}" defaultValue={prefill?.phone} placeholder="0901234567"/></label>
+          <label className="full"><span>Địa chỉ</span><input name="address" required minLength={5} maxLength={500} defaultValue={prefill?.address} placeholder="Số nhà, tên đường"/></label>
+          <label><span>Tỉnh / Thành phố</span><input name="city" required maxLength={100} defaultValue={prefill?.city} placeholder="TP. Hồ Chí Minh"/></label>
+          <label><span>Quận / Huyện</span><input name="district" required maxLength={100} defaultValue={prefill?.district} placeholder="Quận / Huyện"/></label>
           <label className="full"><span>Ghi chú (không bắt buộc)</span><textarea name="note" maxLength={1000}/></label>
         </div>
         <h2>Phương thức vận chuyển</h2>

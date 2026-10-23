@@ -4,6 +4,8 @@ import { join } from "node:path";
 const root = join(process.cwd(), "uploads");
 const extensions: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/avif": "avif" };
 const keyPattern = /^[0-9a-f-]{36}\.(?:jpg|png|webp|avif)$/;
+const widths = [480, 800, 1200] as const;
+const variantKey = (storageKey: string, width: number) => storageKey.replace(/\.[^.]+$/, `-${width}.webp`);
 
 export function detectImageMime(bytes: Uint8Array) {
   if (bytes.length > 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "image/jpeg";
@@ -27,10 +29,22 @@ export const mediaStorage = {
     await writeFile(join(root, storageKey), new Uint8Array(await file.arrayBuffer()), { flag: "wx" });
     return { storageKey, url: `/media-file/${storageKey}` };
   },
-  async delete(storageKey: string) { if (!keyPattern.test(storageKey)) throw new Error("Khóa ảnh không hợp lệ"); await unlink(join(root, storageKey)); },
-  async getMeta(storageKey: string) {
+  async saveVariant(storageKey: string, width: number, bytes: Uint8Array) {
+    if (!keyPattern.test(storageKey) || !widths.includes(width as typeof widths[number])) throw new Error("Khóa ảnh không hợp lệ");
+    await writeFile(join(root, variantKey(storageKey, width)), bytes, { flag: "wx" });
+  },
+  async delete(storageKey: string) {
+    if (!keyPattern.test(storageKey)) throw new Error("Khóa ảnh không hợp lệ");
+    await unlink(join(root, storageKey));
+    for (const width of widths) await unlink(join(root, variantKey(storageKey, width))).catch((error: NodeJS.ErrnoException) => { if (error.code !== "ENOENT") throw error; });
+  },
+  async getMeta(storageKey: string, width?: number) {
     if (!keyPattern.test(storageKey)) return null;
-    try { const file = join(root, storageKey); return { bytes: await readFile(file), size: (await stat(file)).size, mime: Object.entries(extensions).find(([, ext]) => storageKey.endsWith(`.${ext}`))?.[0] ?? "application/octet-stream" }; }
+    if (width && !widths.includes(width as typeof widths[number])) return null;
+    try {
+      const file = join(root, width ? variantKey(storageKey, width) : storageKey);
+      return { bytes: await readFile(file), size: (await stat(file)).size, mime: width ? "image/webp" : Object.entries(extensions).find(([, ext]) => storageKey.endsWith(`.${ext}`))?.[0] ?? "application/octet-stream" };
+    }
     catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") return null; throw error; }
   },
 };

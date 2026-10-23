@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
-import { readFile, unlink } from "node:fs/promises";
-import { join } from "node:path";
+import { readFile } from "node:fs/promises";
 import postgres from "postgres";
+import { mediaStorage } from "../../lib/media-storage";
 
 test("admin mobile: tải ảnh local, lưu nháp chỉ tên, nhân bản và đưa ảnh lên PDP", async ({ page }) => {
   const sql = postgres(process.env.DATABASE_URL!, { prepare: false });
@@ -21,6 +21,7 @@ test("admin mobile: tải ảnh local, lưu nháp chỉ tên, nhân bản và đ
     const second = library.find((item: { alt: string }) => item.alt === `${slug}-hai.png`);
     expect(media).toBeTruthy(); expect(second).toBeTruthy(); storageKeys.push(media.storageKey, second.storageKey);
     const image = await page.request.get(media.url); expect(image.ok()).toBe(true); expect(image.headers()["content-type"]).toBe("image/png");
+    const webp = await page.request.get(`${media.url}?w=480`); expect(webp.ok()).toBe(true); expect(webp.headers()["content-type"]).toBe("image/webp");
     expect((await page.request.get("/media-file/%2e%2e%2f.env.local")).status()).not.toBe(200);
     await page.goto("/admin");
     await page.getByRole("button", { name: /Sản phẩm \d+/ }).click();
@@ -58,7 +59,7 @@ test("admin mobile: tải ảnh local, lưu nháp chỉ tên, nhân bản và đ
     await expect(page.locator(".product-gallery-main img")).toHaveAttribute("src", media.url);
   } finally {
     await sql`delete from products where name in (${name}, ${name + " (bản sao)"})`;
-    for (const storageKey of storageKeys) { await sql`delete from media where storage_key = ${storageKey}`; await unlink(join(process.cwd(), "uploads", storageKey)).catch(() => {}); }
+    for (const storageKey of storageKeys) { await sql`delete from media where storage_key = ${storageKey}`; await mediaStorage.delete(storageKey).catch(() => {}); }
     await sql.end();
   }
 });

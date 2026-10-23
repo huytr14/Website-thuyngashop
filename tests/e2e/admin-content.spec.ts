@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
-import { readFile, unlink } from "node:fs/promises";
-import { join } from "node:path";
+import { readFile } from "node:fs/promises";
 import postgres from "postgres";
+import { mediaStorage } from "../../lib/media-storage";
 
 async function adminLogin(page: import("@playwright/test").Page) {
   await page.goto("/admin");
@@ -63,7 +63,7 @@ test("giao diện admin đổi logo, thanh thông báo và thứ tự slide ở 
     const restored = await page.evaluate(async (site) => (await fetch("/api/admin/site", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(site) })).ok, original).catch(() => false);
     if (!restored) throw new Error("Không thể khôi phục giao diện sau test; giữ nguyên ảnh để tránh hỏng trang");
     const sql = postgres(process.env.DATABASE_URL!, { prepare: false });
-    try { for (const key of keys) { await sql`delete from media where storage_key = ${key}`; await unlink(join(process.cwd(), "uploads", key)).catch(() => {}); } }
+    try { for (const key of keys) { await sql`delete from media where storage_key = ${key}`; await mediaStorage.delete(key).catch(() => {}); } }
     finally { await sql.end(); }
   }
 });
@@ -94,7 +94,7 @@ test("voucher áp vào đơn COD, khách hiện trong admin và shop trả lời
     await page.locator(".pdp-vouchers > div").filter({ hasText: code }).getByRole("button", { name: "Sao chép" }).click();
     await expect(page.getByText(`Đã sao chép mã ${code}`)).toBeVisible();
     await page.getByRole("button", { name: "200 viên" }).click();
-    await page.getByRole("button", { name: "THÊM VÀO TÚI" }).click();
+    await page.locator(".product-buy-panel .add-detail").click();
     await page.goto("/thanh-toan");
     await page.getByPlaceholder("Mã giảm giá").fill(code);
     await page.getByRole("button", { name: "ÁP DỤNG" }).click();

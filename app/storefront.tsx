@@ -8,6 +8,7 @@ import Header from "@/components/storefront/Header";
 import Hero from "@/components/storefront/Hero";
 import ProductDetailModal from "@/components/storefront/ProductDetailModal";
 import ProductGrid, { ProductCard } from "@/components/storefront/ProductGrid";
+import RecentProducts from "@/components/storefront/RecentProducts";
 import type { Product } from "@/components/storefront/types";
 import type { ReviewSummary } from "@/db/store";
 import { formatPrice as format } from "@/catalog/products";
@@ -45,6 +46,7 @@ export default function Storefront({ products, categories, categoryTree, reviewS
     const available = new Set(products.map(({ id }) => id));
     setCart(Object.fromEntries(Object.entries(parseCart(localStorage.getItem(CART_STORAGE_KEY))).filter(([key]) => available.has(cartItem(key).productId))));
     const params = new URLSearchParams(location.search);
+    if (params.has("q")) { location.replace(`/tim-kiem?q=${encodeURIComponent(params.get("q") ?? "")}`); return; }
     setQuery(params.get("q") ?? "");
     setBrandFilter(params.get("brand") ?? "");
     const requestedCategory = params.get("category");
@@ -147,6 +149,7 @@ export default function Storefront({ products, categories, categoryTree, reviewS
 
       {site.sections.testimonials.enabled && site.testimonials.some((item) => item.enabled) && <section className="testimonials section"><div className="section-intro"><div><h2>{site.sections.testimonials.title}</h2></div><p>{site.sections.testimonials.subtitle}</p></div><div className="testimonial-grid">{site.testimonials.filter((item) => item.enabled).map((item) => <article key={item.id}>{item.image && <img src={item.image} alt={item.name} loading="lazy"/>}<p>{"★".repeat(item.rating)}</p><blockquote>{item.content}</blockquote><strong>{item.name}</strong></article>)}</div></section>}
 
+      <RecentProducts products={products}/>
       <Footer site={site}/>
       <ProductDetailModal product={selectedProduct} quantity={detailQty} setQuantity={setDetailQty} close={() => setSelectedProduct(null)} add={add} buyNow={buyNow} categoryOf={categoryOf} format={format} policies={policies}/>
       <CartDrawer open={cartOpen} count={count} products={products} cart={cart} subtotal={subtotal} close={() => setCartOpen(false)} update={update} checkout={() => location.assign("/thanh-toan")} format={format} flashSettings={flashSettings}/>

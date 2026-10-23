@@ -14,7 +14,7 @@ export const siteContentSchema = z.object({
   departmentRails: z.array(z.object({ categorySlug: z.string().trim().max(100), title: text, enabled: z.boolean() })).max(4),
   home: z.object({ featureImage: image, categoryImages: z.array(image).length(3), journal: z.array(z.object({ image, label: text, title: text, linkText: text })).length(3), benefits: z.array(z.object({ title: text, description: text })).length(4), brandTags: z.array(text).length(5) }),
   sections: z.object({ deals: section, feature: section, categories: section, newProducts: section, priceEdit: section, brandStrip: section, journal: section, benefits: section, testimonials: section }),
-  footer: z.object({ intro: z.string().trim().max(2000), address: text, hotline: text, email: z.union([z.literal(""), z.email().max(255)]), hours: text, facebook: link, instagram: link, zalo: link, tiktok: link, youtube: link, contactContent: z.string().trim().min(10).max(50000), newsletterTitle: text, newsletterIntro: text, newsletterNote: text }),
+  footer: z.object({ intro: z.string().trim().max(2000), address: text, hotline: text, email: z.union([z.literal(""), z.email().max(255)]), hours: text, facebook: link, instagram: link, zalo: link, messenger: link, tiktok: link, youtube: link, contactContent: z.string().trim().min(10).max(50000), newsletterTitle: text, newsletterIntro: text, newsletterNote: text }),
   seo: z.object({ titleTemplate: text, description: text, image }),
   testimonials: z.array(testimonial).max(30),
 });
@@ -55,7 +55,7 @@ export const defaultSiteContent: SiteContent = {
     benefits: { enabled: true, title: "", subtitle: "" },
     testimonials: { enabled: false, title: "Cảm nhận khách hàng", subtitle: "Những chia sẻ từ khách hàng của THUYNGA Shop." },
   },
-  footer: { intro: "Hàng nhập khẩu chính hãng: thực phẩm chức năng, thực phẩm, trái cây, mỹ phẩm và chăm sóc cá nhân.", address: "", hotline: "", email: "", hours: "", facebook: "", instagram: "", zalo: "", tiktok: "", youtube: "", contactContent: "Hãy để lại lời nhắn, THUYNGA Shop sẽ phản hồi trong thời gian sớm nhất.", newsletterTitle: "THUYNGA LETTER", newsletterIntro: "Cập nhật hàng nhập khẩu mới và gợi ý mua sắm dành cho bạn.", newsletterNote: "Đăng ký nhận tin sẽ mở khi website vận hành." },
+  footer: { intro: "Hàng nhập khẩu chính hãng: thực phẩm chức năng, thực phẩm, trái cây, mỹ phẩm và chăm sóc cá nhân.", address: "", hotline: "", email: "", hours: "", facebook: "", instagram: "", zalo: "", messenger: "", tiktok: "", youtube: "", contactContent: "Hãy để lại lời nhắn, THUYNGA Shop sẽ phản hồi trong thời gian sớm nhất.", newsletterTitle: "THUYNGA LETTER", newsletterIntro: "Cập nhật hàng nhập khẩu mới và gợi ý mua sắm dành cho bạn.", newsletterNote: "Đăng ký nhận tin sẽ mở khi website vận hành." },
   seo: { titleTemplate: "{tên trang} | THUYNGA Shop", description: "THUYNGA Shop — hàng nhập khẩu chính hãng: thực phẩm chức năng, thực phẩm, trái cây và mỹ phẩm từ Mỹ, Nhật, Hàn, Úc.", image: "/thuynga-logo-wine.png" },
   testimonials: [],
 };

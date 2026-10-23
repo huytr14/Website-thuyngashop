@@ -8,6 +8,7 @@ import type { ReviewSummary } from "@/db/store";
 import { CART_STORAGE_KEY, cartLines, parseCart, storeCart } from "@/lib/cart";
 import { flashActive, pricedLine } from "@/lib/product-pricing";
 import { useWishlist } from "@/lib/wishlist";
+import { responsiveImage } from "@/lib/responsive-image";
 import Header from "@/components/storefront/Header";
 import Footer from "@/components/storefront/Footer";
 import CartDrawer from "@/components/storefront/CartDrawer";
@@ -43,10 +44,10 @@ export default function CategoryPageClient({ category, categoryTree, products, a
         <label><input type="checkbox" checked={inStockOnly} onChange={(event) => setInStockOnly(event.target.checked)}/> Chỉ còn hàng</label>
         <span>Có {filtered.length} sản phẩm</span><button type="button" onClick={() => { setBrand(""); setOrigin(""); setSort("newest"); setInStockOnly(false); }}>Đặt lại bộ lọc</button>
       </div>
-      <div className="category-products">{filtered.map((item) => <article className={item.inStock ? "" : "out-of-stock"} key={item.id}>
+      <div className="category-products">{filtered.map((item, index) => <article className={item.inStock ? "" : "out-of-stock"} key={item.id}>
         <button type="button" className="card-wishlist" aria-label={wishlist.ids.includes(item.id) ? `Bỏ yêu thích ${item.name}` : `Yêu thích ${item.name}`} aria-pressed={wishlist.ids.includes(item.id)} onClick={() => void wishlist.toggle(item.id)}>{wishlist.ids.includes(item.id) ? "♥" : "♡"}</button>
         {(item.badge || (item.createdAt && Date.now() - new Date(item.createdAt).getTime() < 14 * 86400000)) && <span className="category-badge">{item.badge || "Mới"}</span>}{!item.inStock && <span className="sold-out-badge">Hết hàng</span>}
-        <a href={`/san-pham/${item.slug}`}><img src={item.image} alt={`${item.brand} ${item.name}`} loading="lazy"/><small>{item.brand}</small><h2>{item.name}</h2></a>
+        <a href={`/san-pham/${item.slug}`}><img src={item.image} {...responsiveImage(item.image, "(max-width: 767px) 50vw, 25vw")} alt={`${item.brand} ${item.name}`} width={480} height={480} loading={index < 2 ? "eager" : "lazy"} fetchPriority={index === 0 ? "high" : "auto"}/><small>{item.brand}</small><h2>{item.name}</h2></a>
         {summaries[item.id] && <small>★ {summaries[item.id].average.toLocaleString("vi-VN")} ({summaries[item.id].count})</small>}
         <strong>{item.variantRows?.length && !flashActive(flashSettings) ? "Từ " : ""}{formatPrice(price(item))}</strong>{(flashActive(flashSettings) && item.flashPrice != null ? item.price : item.oldPrice) > price(item) && <small className="category-discount">-{Math.round((1 - price(item) / (flashActive(flashSettings) && item.flashPrice != null ? item.price : item.oldPrice)) * 100)}%</small>}{!!item.soldCount && <small>Đã bán {item.soldCount.toLocaleString("vi-VN")}</small>}
         {item.variantRows?.length && item.inStock ? <a className="category-add" href={`/san-pham/${item.slug}`}>Chọn biến thể</a> : <button type="button" disabled={!item.inStock} onClick={() => add(item.id)}>{item.inStock ? "Thêm vào giỏ" : "Hết hàng"}</button>}

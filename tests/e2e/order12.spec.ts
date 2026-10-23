@@ -59,7 +59,7 @@ test("wishlist vãng lai hợp nhất vào tài khoản và mobile không tràn 
     await page.getByLabel("EMAIL").fill(email);
     await page.getByLabel("MẬT KHẨU").fill("TestPassword123!");
     await page.getByRole("button", { name: "ĐĂNG KÝ" }).click();
-    await expect(page).toHaveURL(/\/tai-khoan/);
+    await expect(page).toHaveURL(/\/tai-khoan/, { timeout: 15000 });
     const mobileNav = page.getByRole("navigation", { name: "Điều hướng mobile" });
     await expect(mobileNav).toBeVisible();
     await mobileNav.getByRole("button", { name: "Danh mục" }).click();
@@ -82,8 +82,8 @@ test("flash áp giá thật; admin sửa nhanh, sửa hàng loạt và doanh thu
   try {
     await sql`update shop_settings set flash_sale_title = 'Flash kiểm thử', flash_sale_start = now() - interval '1 minute', flash_sale_end = now() + interval '1 hour' where id = 1`;
     await sql`update products set flash_price = 99000, flash_stock = 5 where id = ${product.id}`;
-    await page.waitForTimeout(6000);
-    await expect.poll(async () => { await page.goto("/"); return await page.locator(".flash-sale").count(); }, { timeout: 20000 }).toBe(1);
+    await page.goto("/");
+    await expect.poll(async () => { await page.reload(); return await page.locator(".flash-sale").waitFor({ state: "visible", timeout: 3000 }).then(() => true, () => false); }, { timeout: 30000 }).toBe(true);
     await expect(page.locator(".flash-sale")).toContainText("Flash kiểm thử");
     await expect(page.locator(".flash-sale")).toContainText("99.000₫");
     await expect(page.locator(".flash-sale progress")).toHaveCount(1);

@@ -6,8 +6,8 @@ import "./homepage.css";
 import "./brand.css";
 import "./public-pages.css";
 
-const display = Cormorant_Garamond({ variable: "--font-display", subsets: ["latin","vietnamese"], weight: ["400","500","600"] });
-const sans = Montserrat({ variable: "--font-sans", subsets: ["latin","vietnamese"], weight: ["400","500","600","700"] });
+const display = Cormorant_Garamond({ variable: "--font-display", subsets: ["latin","vietnamese"], weight: ["400","500","600"], display: "swap", preload: true, adjustFontFallback: true });
+const sans = Montserrat({ variable: "--font-sans", subsets: ["latin","vietnamese"], weight: ["400","500","600","700"], display: "swap", preload: true, adjustFontFallback: true });
 
 export async function generateMetadata(): Promise<Metadata> {
   const base = new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000");
@@ -25,5 +25,5 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="vi"><body className={`${display.variable} ${sans.variable}`}>{children}</body></html>;
+  return <html lang="vi"><head><link rel="preconnect" href="https://images.unsplash.com" crossOrigin="anonymous"/></head><body className={`${display.variable} ${sans.variable}`}>{children}</body></html>;
 }

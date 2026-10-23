@@ -108,8 +108,6 @@ test("header trang chi tiết giữ tìm kiếm, giỏ hàng và ẩn sao khi ch
   await page.locator(".drawer-head button").click();
   await page.locator(".header .search input").fill("Shiseido");
   await page.locator(".header .search input").press("Enter");
-  await expect(page).toHaveURL(/\/\?q=Shiseido#deals$/);
-  await expect(page.locator(".product").first()).toContainText(/Shiseido/i);
-  await page.locator(".product-detail-link").first().click();
-  await expect(page.getByRole("dialog").locator(".product-rating")).toHaveCount(0);
+  await expect(page).toHaveURL(/\/tim-kiem\?q=Shiseido$/);
+  await expect(page.locator(".category-products article").first()).toContainText(/Shiseido/i);
 });

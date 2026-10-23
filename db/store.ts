@@ -56,6 +56,7 @@ export async function getStoreCatalog(): Promise<{ products: Product[]; categori
         variant: storeProducts.variant,
         inStock: storeProducts.inStock,
         trackInventory: storeProducts.trackInventory,
+        inventoryQuantity: storeProducts.inventoryQuantity,
         variantOptions: storeProducts.variantOptions,
         variantRows: storeProducts.variantRows,
         flashPrice: storeProducts.flashPrice,
