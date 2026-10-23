@@ -25,7 +25,7 @@ type ProductGridProps = {
 export default function ProductGrid({ categories, category, sort, query, filtered, visibleProducts, showAllProducts, setCategory, setSort, setShowAllProducts, openProduct, buyNow, format, reviewSummaries, section = defaultSiteContent.sections.deals }: ProductGridProps) {
   return <section className="products section product-first" id="deals">
     <div className="shop-heading">
-      <div><span className="section-overline">01 / BỘ SƯU TẬP MỸ PHẨM</span><h2>{section.title}</h2><p>{section.subtitle}</p></div>
+      <div><span className="section-overline">01 / HÀNG NHẬP KHẨU CHỌN LỌC</span><h2>{section.title}</h2><p>{section.subtitle}</p></div>
     </div>
     <div className="catalog-toolbar">
       <Tabs value={category} onValueChange={setCategory}><TabsList className="catalog-tabs" aria-label="Danh mục sản phẩm">{categories.map((name) => <TabsTrigger key={name} value={name}>{name}</TabsTrigger>)}</TabsList></Tabs>

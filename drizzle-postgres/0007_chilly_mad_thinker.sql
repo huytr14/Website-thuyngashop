@@ -1,0 +1,1 @@
+ALTER TABLE "shop_settings" ALTER COLUMN "about_content" SET DEFAULT 'THUYNGA Shop — hàng nhập khẩu chính hãng: thực phẩm chức năng, thực phẩm, trái cây, mỹ phẩm và chăm sóc cá nhân.';

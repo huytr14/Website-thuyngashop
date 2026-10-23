@@ -12,7 +12,7 @@ const sans = Montserrat({ variable: "--font-sans", subsets: ["latin","vietnamese
 export async function generateMetadata(): Promise<Metadata> {
   const base = new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000");
   const site = await getSiteContent();
-  const title = site.brand.name === "THUYNGA Shop" ? "THUYNGA Shop — Vẻ đẹp được chọn lọc" : site.brand.name;
+  const title = site.brand.name === "THUYNGA Shop" ? "THUYNGA Shop — Hàng nhập khẩu chính hãng" : site.brand.name;
   const image = site.seo.image || site.brand.logo;
   return {
     metadataBase: base,

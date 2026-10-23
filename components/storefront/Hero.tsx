@@ -14,7 +14,7 @@ export default function Hero({ heroIndex, setHeroIndex, slides = defaultSiteCont
   const slide = visible[index];
   return <section className={`hero hero-slide-${index}`} aria-label="Bộ sưu tập nổi bật">
     <div className="hero-copy">
-      <p className="eyebrow">THUYNGA BEAUTY SELECTION</p>
+      <p className="eyebrow">THUYNGA SHOP · HÀNG NHẬP KHẨU</p>
       <h1>{slide.title}<br/><em>{slide.accent}</em></h1>
       <p>{slide.description}</p>
       {slide.buttonText && <a href={slide.buttonLink || "#deals"} className="primary">{slide.buttonText} <ArrowUpRight size={16}/></a>}

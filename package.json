@@ -11,7 +11,7 @@
     "start": "vinext start",
     "test": "npm run build && npm run test:admin && npm run test:commerce && npm run test:e2e",
     "test:csv": "node --experimental-strip-types --test tests/csv-import.test.ts",
-    "test:admin": "node --experimental-strip-types --test tests/csv-import.test.ts tests/login-rate-limit.test.ts tests/media-storage.test.ts",
+    "test:admin": "node --experimental-strip-types --test tests/categories.test.ts tests/csv-import.test.ts tests/login-rate-limit.test.ts tests/media-storage.test.ts",
     "test:commerce": "node --experimental-strip-types --test tests/cart.test.ts tests/commerce.test.ts tests/password.test.ts",
     "test:e2e": "playwright test",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",

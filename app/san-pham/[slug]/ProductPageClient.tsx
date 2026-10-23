@@ -9,10 +9,11 @@ import CartDrawer from "@/components/storefront/CartDrawer";
 import Footer from "@/components/storefront/Footer";
 import Header from "@/components/storefront/Header";
 import type { SiteContent } from "@/lib/site-content";
+import { requiresDisclaimer, type ShopCategory } from "@/lib/categories";
 
-type Props = { product: Product; products: Product[]; related: Product[]; reviews: ProductReview[]; summaries: Record<number, ReviewSummary>; site: SiteContent };
+type Props = { product: Product; products: Product[]; categoryTree: ShopCategory[]; related: Product[]; reviews: ProductReview[]; summaries: Record<number, ReviewSummary>; site: SiteContent };
 
-export default function ProductPageClient({ product, products, related, reviews, summaries, site }: Props) {
+export default function ProductPageClient({ product, products, categoryTree, related, reviews, summaries, site }: Props) {
   const images = [...new Set([product.image, ...product.extraImages].filter(Boolean))];
   const [image, setImage] = useState(images[0]);
   const [quantity, setQuantity] = useState(1);
@@ -36,7 +37,7 @@ export default function ProductPageClient({ product, products, related, reviews,
     if (checkout) location.assign("/thanh-toan"); else setCartOpen(true);
   };
 
-  return <><Header menuOpen={menuOpen} searchOpen={searchOpen} query={query} count={count} setMenuOpen={setMenuOpen} setSearchOpen={setSearchOpen} setQuery={setQuery} setCategory={() => {}} openCart={() => setCartOpen(true)} browseFromProduct site={site}/><main className="public-page"><div className="product-page">
+  return <><Header menuOpen={menuOpen} searchOpen={searchOpen} query={query} count={count} setMenuOpen={setMenuOpen} setSearchOpen={setSearchOpen} setQuery={setQuery} setCategory={() => {}} openCart={() => setCartOpen(true)} browseFromProduct site={site} categoryTree={categoryTree}/><main className="public-page"><div className="product-page">
     <nav className="product-breadcrumb" aria-label="Đường dẫn"><a href="/">Trang chủ</a> / <a href="/#deals">Sản phẩm</a> / {product.name}</nav>
     <div className="product-page-top">
       <div className="product-gallery">
@@ -53,9 +54,9 @@ export default function ProductPageClient({ product, products, related, reviews,
         <div className="detail-actions"><button type="button" className="add-detail" disabled={!product.inStock} onClick={() => add()}>THÊM VÀO TÚI</button><button type="button" className="buy-now" disabled={!product.inStock} onClick={() => add(true)}>MUA NGAY</button></div>
       </aside>
     </div>
-    {(benefitText || richDescription) && <section className="product-page-section"><h2>Mô tả & lợi ích</h2>{product.shortDescription && richDescription && <p className="product-prose">{product.shortDescription}</p>}{richDescription ? <div className="product-prose" dangerouslySetInnerHTML={{ __html: product.description }}/> : <p className="product-prose">{benefitText}</p>}</section>}
+    {(benefitText || richDescription || requiresDisclaimer(product.categoryId ?? null, categoryTree)) && <section className="product-page-section"><h2>Mô tả & lợi ích</h2>{product.shortDescription && richDescription && <p className="product-prose">{product.shortDescription}</p>}{richDescription ? <div className="product-prose" dangerouslySetInnerHTML={{ __html: product.description }}/> : benefitText && <p className="product-prose">{benefitText}</p>}{requiresDisclaimer(product.categoryId ?? null, categoryTree) && <p className="tpcn-disclaimer">Sản phẩm này không phải là thuốc và không có tác dụng thay thế thuốc chữa bệnh.</p>}</section>}
     {usageLines.length > 0 && <section className="product-page-section"><h2>Thành phần & cách dùng</h2>{usageLines.map((line) => <p className="product-prose" key={line}>{line}</p>)}</section>}
-    <section className="product-page-section"><h2>Thông số sản phẩm</h2><dl className="product-specs"><dt>Thương hiệu</dt><dd>{product.brand}</dd><dt>Danh mục</dt><dd>{product.category}</dd>{product.variant && <><dt>Biến thể</dt><dd>{product.variant}</dd></>}<dt>Mã sản phẩm</dt><dd>TNG-{String(product.id).padStart(3, "0")}</dd></dl></section>
+    <section className="product-page-section"><h2>Thông số sản phẩm</h2><dl className="product-specs">{product.brand && <><dt>Thương hiệu</dt><dd>{product.brand}</dd></>}{product.origin && <><dt>Xuất xứ</dt><dd>{product.origin}</dd></>}{product.specification && <><dt>Quy cách</dt><dd>{product.specification}</dd></>}{product.expiryDate && <><dt>Hạn sử dụng</dt><dd>{new Date(`${product.expiryDate}T00:00:00Z`).toLocaleDateString("vi-VN", { timeZone: "UTC" })}</dd></>}<dt>Danh mục</dt><dd>{product.category}</dd>{product.variant && <><dt>Biến thể</dt><dd>{product.variant}</dd></>}<dt>Mã sản phẩm</dt><dd>TNG-{String(product.id).padStart(3, "0")}</dd></dl></section>
     <section className="product-page-section"><h2>Đánh giá đã duyệt</h2>{reviews.length ? reviews.map((review) => <article className="product-review" key={review.id}><strong>{"★".repeat(review.rating)} · {review.title}</strong><p>{review.content}</p><small>{review.customerName ?? "Khách hàng"}</small>{review.shopReply && <div className="shop-reply"><strong>Phản hồi từ THUYNGA Shop</strong><p>{review.shopReply}</p></div>}</article>) : <p>Chưa có đánh giá được duyệt.</p>}</section>
     {related.length > 0 && <section className="product-page-section"><h2>Sản phẩm liên quan</h2><div className="related-products">{related.map((item) => <article key={item.id}><a href={`/san-pham/${item.slug}`}><div className="related-image"><img src={item.image} alt={item.name} loading="lazy"/></div><h3>{item.name}</h3></a>{summaries[item.id] && <p className="product-rating">★ {summaries[item.id].average.toLocaleString("vi-VN")} ({summaries[item.id].count})</p>}<strong>{formatPrice(item.price)}</strong></article>)}</div></section>}
   </div></main><Footer site={site}/><CartDrawer open={cartOpen} count={count} products={products} cart={cart} subtotal={subtotal} close={() => setCartOpen(false)} update={update} checkout={() => location.assign("/thanh-toan")} format={formatPrice}/></>;

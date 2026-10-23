@@ -44,7 +44,7 @@ test("admin mobile: tải ảnh local, lưu nháp chỉ tên, nhân bản và đ
     await page.getByRole("button", { name: "Đưa ảnh xuống" }).first().click();
     await page.getByLabel("Giá bán").fill("2.780.000");
     await expect(page.getByLabel("Giá bán")).toHaveValue("2.780.000");
-    await page.getByLabel("Danh mục").selectOption({ index: 1 });
+    await page.getByLabel("Danh mục").selectOption({ label: "Thực phẩm chức năng" });
     await page.getByLabel("Trạng thái").selectOption("published");
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.getByRole("button", { name: "Lưu", exact: true }).click();

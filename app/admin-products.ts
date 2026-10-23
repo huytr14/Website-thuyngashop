@@ -4,10 +4,13 @@ import { sanitizeRichText } from "../lib/sanitize-rich-text.ts";
 const image = z.string().trim().refine((value) => !value || value.startsWith("/") || /^https?:\/\//i.test(value), "Ảnh phải là URL http(s) hoặc đường dẫn bắt đầu bằng /");
 
 export const productInputSchema = z.object({
-  name: z.string().trim().min(1, "Tên sản phẩm là bắt buộc").max(200),
+  name: z.string().trim().min(1, "Tên sản phẩm là bắt buộc").max(200).refine((value) => !/thuốc|thuoc|dayquil|nyquil/i.test(value), "Cửa hàng không bán thuốc"),
   slug: z.string().trim().max(200).regex(/^(?:[a-z0-9]+(?:-[a-z0-9]+)*)?$/, "Slug chỉ gồm chữ thường, số và dấu gạch ngang"),
   slugCustom: z.boolean().default(false),
   brand: z.string().trim().max(100),
+  origin: z.enum(["Mỹ", "Nhật Bản", "Hàn Quốc", "Úc", "Đức", "Pháp", "Khác"]).nullable().default(null),
+  specification: z.string().trim().max(150).default(""),
+  expiryDate: z.iso.date().nullable().default(null),
   price: z.coerce.number().int().nonnegative("Giá bán không hợp lệ"),
   oldPrice: z.coerce.number().int().nonnegative("Giá gốc không hợp lệ"),
   image,

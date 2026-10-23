@@ -93,7 +93,7 @@ test("header trang chi tiết giữ tìm kiếm, giỏ hàng và ẩn sao khi ch
   const sql = postgres(process.env.DATABASE_URL!, { prepare: false });
   let slug: string;
   try {
-    const rows = await sql<{ slug: string }[]>`select p.slug from products p where not exists (select 1 from reviews r where r.product_id = p.id and r.status = 'APPROVED') limit 1`;
+    const rows = await sql<{ slug: string }[]>`select p.slug from products p join categories c on c.id = p.category_id where p.published = true and c.is_visible = true and not exists (select 1 from reviews r where r.product_id = p.id and r.status = 'APPROVED') limit 1`;
     slug = rows[0].slug;
   } finally { await sql.end(); }
   await page.goto(`/san-pham/${slug}`);

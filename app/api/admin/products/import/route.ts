@@ -3,6 +3,7 @@ import { hasAdminSession } from "@/app/admin-auth";
 import { parseProductCsv } from "@/app/admin-products";
 import { openStoreDb } from "@/db/store";
 import { storeCategories, storeProducts } from "@/db/store-schema";
+import { categoryPath } from "@/lib/categories";
 
 export async function POST(request: Request) {
   if (!await hasAdminSession()) return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -19,7 +20,7 @@ export async function POST(request: Request) {
       db.select().from(storeCategories),
       db.select({ id: storeProducts.id, name: storeProducts.name, slug: storeProducts.slug, badge: storeProducts.badge }).from(storeProducts),
     ]);
-    const categoryIds = new Map(categories.map(({ id, name }) => [name.toLocaleLowerCase("vi-VN"), id]));
+    const categoryIds = new Map(categories.map((category) => [categoryPath(category, categories).toLocaleLowerCase("vi-VN"), category.id]));
     const byName = new Map(existingProducts.map((product) => [product.name.toLocaleLowerCase("vi-VN"), product]));
     const bySlug = new Map(existingProducts.map((product) => [product.slug, product]));
     const errors: string[] = [];

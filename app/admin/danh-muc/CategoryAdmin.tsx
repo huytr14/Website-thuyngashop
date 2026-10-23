@@ -1,0 +1,29 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import MediaPicker from "@/components/admin/MediaPicker";
+import "./categories.css";
+
+type Category = { id: number; name: string; slug: string; description: string; parentId: number | null; imageMediaId: number | null; sortOrder: number; isVisible: boolean; requiresDisclaimer: boolean };
+const blank = (): Omit<Category, "id"> => ({ name: "", slug: "", description: "", parentId: null, imageMediaId: null, sortOrder: 0, isVisible: true, requiresDisclaimer: false });
+const slugify = (value: string) => value.normalize("NFD").replace(/\p{Diacritic}/gu, "").replace(/đ/gi, "d").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+export default function CategoryAdmin() {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [editing, setEditing] = useState<Category | null>(null);
+  const [form, setForm] = useState(blank);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [slugEdited, setSlugEdited] = useState(false);
+  const load = async () => { const response = await fetch("/api/admin/categories"); const data = await response.json(); if (response.ok) setCategories(data.categories); else setError(data.error ?? "Không thể tải danh mục"); setLoading(false); };
+  useEffect(() => { void load(); }, []);
+  const start = (category?: Category, parentId: number | null = null) => { setEditing(category ?? null); setForm(category ? { ...category } : { ...blank(), parentId, sortOrder: categories.filter((item) => item.parentId === parentId).length }); setSlugEdited(Boolean(category)); setError(""); };
+  const save = async (event: React.FormEvent) => { event.preventDefault(); setError(""); const response = await fetch(editing ? `/api/admin/categories/${editing.id}` : "/api/admin/categories", { method: editing ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) }); const data = await response.json(); if (!response.ok) return setError(data.error ?? "Không thể lưu danh mục"); await load(); setEditing(null); setForm(blank()); };
+  const remove = async (category: Category) => { if (!confirm(`Xóa danh mục “${category.name}”?`)) return; const response = await fetch(`/api/admin/categories/${category.id}`, { method: "DELETE" }); const data = await response.json(); if (!response.ok) return setError(data.error ?? "Không thể xóa danh mục"); await load(); };
+  const move = async (category: Category, delta: number) => { const response = await fetch("/api/admin/categories/reorder", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: category.id, delta }) }); const data = await response.json(); if (response.ok) setCategories(data.categories); else setError(data.error ?? "Không thể đổi thứ tự"); };
+  const roots = categories.filter((item) => !item.parentId);
+  const item = (category: Category, child = false) => <div className={child ? "category-row child" : "category-row"} key={category.id}><span><b>{category.name}</b><small>/{category.slug}{!category.isVisible ? " · Đang ẩn" : ""}{category.requiresDisclaimer ? " · TPCN" : ""}</small></span><div><button onClick={() => void move(category, -1)} aria-label={`Đưa ${category.name} lên`}>↑</button><button onClick={() => void move(category, 1)} aria-label={`Đưa ${category.name} xuống`}>↓</button>{!child && <button onClick={() => start(undefined, category.id)}>＋ Con</button>}<button onClick={() => start(category)}>Sửa</button><button onClick={() => void remove(category)}>Xóa</button></div></div>;
+  return <div className="category-admin"><div className="category-actions"><p>Quản lý cây danh mục 2 cấp. Danh mục ẩn sẽ không xuất hiện trên cửa hàng.</p><button onClick={() => start()}>＋ Thêm danh mục gốc</button></div>{error && <p role="alert" className="category-error">{error}</p>}{loading ? <p>Đang tải…</p> : roots.map((root) => <section className="category-group" key={root.id}>{item(root)}{categories.filter((entry) => entry.parentId === root.id).map((entry) => item(entry, true))}</section>)}
+    <form className="category-form" onSubmit={(event) => void save(event)}><h2>{editing ? "Sửa danh mục" : "Thêm danh mục"}</h2><label>Tên<input required maxLength={100} value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value, slug: !slugEdited ? slugify(event.target.value) : current.slug }))}/></label><label>Slug<input required maxLength={100} value={form.slug} onChange={(event) => { setSlugEdited(true); setForm((current) => ({ ...current, slug: event.target.value })); }}/></label><label>Danh mục cha<select value={form.parentId ?? ""} onChange={(event) => setForm((current) => ({ ...current, parentId: event.target.value ? Number(event.target.value) : null, requiresDisclaimer: false }))}><option value="">Danh mục gốc</option>{roots.filter((root) => root.id !== editing?.id).map((root) => <option key={root.id} value={root.id}>{root.name}</option>)}</select></label><label>Mô tả ngắn<textarea maxLength={500} value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}/></label><label>Ảnh danh mục<MediaPicker selected={form.imageMediaId ? [form.imageMediaId] : []} multiple={false} onChange={(ids) => setForm((current) => ({ ...current, imageMediaId: ids[0] ?? null }))}/></label><label className="category-check"><input type="checkbox" checked={form.isVisible} onChange={(event) => setForm((current) => ({ ...current, isVisible: event.target.checked }))}/> Hiển thị trên cửa hàng</label>{!form.parentId && <label className="category-check"><input type="checkbox" checked={form.requiresDisclaimer} onChange={(event) => setForm((current) => ({ ...current, requiresDisclaimer: event.target.checked }))}/> Hiển thị khuyến cáo TPCN cho ngành này</label>}<button type="submit">Lưu danh mục</button></form>
+  </div>;
+}

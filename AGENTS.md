@@ -1,8 +1,8 @@
 # AGENTS.md — Website-thuyngashop (hướng dẫn cho Codex / coding agent)
 
 ## Dự án
-Storefront mỹ phẩm **THUYNGA Shop** — Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4, Radix Tabs, Lucide icons. Node >= 22.
-Bản hiện tại là **demo duyệt thiết kế đã gửi cho khách**: 1 trang (`app/page.tsx` → `app/storefront.tsx`), 30 sản phẩm mẫu hard-code ở `catalog/products.ts`, giỏ hàng/checkout chỉ chạy bằng React state — không backend, không lưu đơn, không thanh toán thật.
+Cửa hàng nhập khẩu đa ngành **THUYNGA Shop — Hàng nhập khẩu chính hãng**: thực phẩm chức năng (TPCN), thực phẩm & đồ uống, trái cây nhập khẩu, mỹ phẩm & chăm sóc cá nhân. Chủ shop không có giấy phép nhà thuốc: **tuyệt đối không bán thuốc, không tạo danh mục/từ khóa Thuốc, không seed thuốc**. Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4, Radix Tabs, Lucide icons. Node >= 22.
+Catalog mẫu đa ngành nằm ở `catalog/products.ts`; dữ liệu vận hành dùng Drizzle ORM + PostgreSQL, có trang quản trị sản phẩm, đơn hàng, nội dung và cây danh mục 2 cấp. Sản phẩm có xuất xứ, quy cách, HSD; ảnh lưu local qua storage adapter hiện có.
 
 ## Lệnh chuẩn
 - Cài đặt: `npm ci`
@@ -18,7 +18,7 @@ Bản hiện tại là **demo duyệt thiết kế đã gửi cho khách**: 1 tr
 
 ## Hướng triển khai bản bán thật (theo giai đoạn, làm đúng thứ tự được giao)
 - **P0:** Sửa metadata (bỏ `olala-select-store.vercel.app`, dùng `NEXT_PUBLIC_SITE_URL`), tách `storefront.tsx` thành component theo section, giữ nguyên hành vi.
-- **P1:** Drizzle ORM + PostgreSQL (DATABASE_URL). Schema: Category, Product, Order, OrderItem. Seed 30 sản phẩm mẫu vào DB; storefront đọc DB, fallback dữ liệu mẫu khi chưa có DATABASE_URL để build không vỡ. Trang `/admin` (mật khẩu qua `ADMIN_PASSWORD`): CRUD sản phẩm + nhập CSV đúng cột của file mẫu sản phẩm (ten_san_pham, danh_muc, thuong_hieu, gia_ban, gia_goc, link_anh_chinh, anh_phu, mo_ta_ngan, mo_ta_chi_tiet, bien_the, con_hang).
+- **P1:** Drizzle ORM + PostgreSQL (DATABASE_URL). Schema: Category (cây 2 cấp), Product (gồm origin/specification/expiryDate), Order, OrderItem. Seed catalog mẫu đa ngành vào DB; storefront đọc DB, fallback dữ liệu mẫu khi chưa có DATABASE_URL để build không vỡ. Trang `/admin` (mật khẩu qua `ADMIN_PASSWORD`): CRUD danh mục/sản phẩm + nhập CSV đúng cột của file mẫu sản phẩm (ten_san_pham, danh_muc, thuong_hieu, gia_ban, gia_goc, link_anh_chinh, anh_phu, mo_ta_ngan, mo_ta_chi_tiet, bien_the, con_hang); danh_muc dùng đường dẫn "Cha / Con".
 - **P2 (chỉ làm khi được giao):** giỏ hàng + checkout lưu Order thật, COD + chuyển khoản/QR, thông báo đơn mới, quản lý đơn trong admin.
 - **P3 (chỉ làm khi được giao):** trang giới thiệu/liên hệ/chính sách, SEO, domain chính thức, test đầu-cuối.
 

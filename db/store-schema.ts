@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, integer, jsonb, pgTable, primaryKey, serial, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/pg-core";
+import { boolean, date, integer, jsonb, pgTable, primaryKey, serial, text, timestamp, uniqueIndex, varchar, type AnyPgColumn } from "drizzle-orm/pg-core";
 import type { SiteContent } from "../lib/site-content";
 
 export const storeUsers = pgTable("users", {
@@ -41,6 +41,12 @@ export const storeCategories = pgTable("categories", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 100 }).notNull(),
   slug: varchar("slug", { length: 100 }).notNull().unique(),
+  description: varchar("description", { length: 500 }).notNull().default(""),
+  parentId: integer("parent_id").references((): AnyPgColumn => storeCategories.id, { onDelete: "restrict" }),
+  imageMediaId: integer("image_media_id").references(() => storeMedia.id, { onDelete: "set null" }),
+  sortOrder: integer("sort_order").notNull().default(0),
+  isVisible: boolean("is_visible").notNull().default(true),
+  requiresDisclaimer: boolean("requires_disclaimer").notNull().default(false),
 });
 
 export const storeProducts = pgTable("products", {
@@ -48,6 +54,9 @@ export const storeProducts = pgTable("products", {
   name: text("name").notNull(),
   slug: varchar("slug", { length: 200 }).notNull().unique(),
   brand: varchar("brand", { length: 100 }).notNull().default(""),
+  origin: varchar("origin", { length: 20 }),
+  specification: varchar("specification", { length: 150 }).notNull().default(""),
+  expiryDate: date("expiry_date"),
   price: integer("price").notNull().default(0),
   oldPrice: integer("old_price").notNull().default(0),
   image: text("image").notNull().default(""),
@@ -127,7 +136,7 @@ export const storeShopSettings = pgTable("shop_settings", {
   bankAccountNumber: varchar("bank_account_number", { length: 50 }).notNull().default(""),
   vietQrUrl: text("viet_qr_url").notNull().default(""),
   shopEmail: varchar("shop_email", { length: 255 }).notNull().default(""),
-  aboutContent: text("about_content").notNull().default("THUYNGA Shop tuyển chọn những sản phẩm làm đẹp phù hợp cho nhịp sống hiện đại."),
+  aboutContent: text("about_content").notNull().default("THUYNGA Shop — hàng nhập khẩu chính hãng: thực phẩm chức năng, thực phẩm, trái cây, mỹ phẩm và chăm sóc cá nhân."),
   contactContent: text("contact_content").notNull().default("Hãy để lại lời nhắn, THUYNGA Shop sẽ phản hồi trong thời gian sớm nhất."),
   privacyPolicy: text("privacy_policy").notNull().default("Thông tin khách hàng chỉ được sử dụng để xử lý đơn hàng và hỗ trợ mua sắm."),
   shippingPolicy: text("shipping_policy").notNull().default("Đơn hàng được giao theo phương thức vận chuyển đã chọn khi thanh toán."),

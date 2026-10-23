@@ -7,7 +7,7 @@ import "./editor.css";
 import styles from "./admin.module.css";
 import { defaultSiteContent, mergeSiteContent, type SiteContent } from "@/lib/site-content";
 
-type Category = { id: number; name: string; slug: string };
+type Category = { id: number; name: string; slug: string; parentId: number | null };
 type Product = EditorProduct & { categoryName: string | null };
 type OrderStatus = "MOI" | "DA_XAC_NHAN" | "DANG_GIAO" | "HOAN_THANH" | "HUY";
 type Order = { id: number; code: string; customerName: string; email: string; phone: string; address: string; city: string; district: string; note: string | null; subtotal: number; shippingFee: number; discount: number; total: number; voucherCode: string | null; paymentMethod: string; status: OrderStatus; createdAt: string };
@@ -19,6 +19,7 @@ const nextStatuses: Record<OrderStatus, OrderStatus[]> = { MOI: ["DA_XAC_NHAN", 
 const statusLabels: Record<OrderStatus, string> = { MOI: "Mới", DA_XAC_NHAN: "Đã xác nhận", DANG_GIAO: "Đang giao", HOAN_THANH: "Hoàn thành", HUY: "Đã hủy" };
 
 const money = (value: number) => `${value.toLocaleString("vi-VN")}₫`;
+const expiryWarning = (date: string | null) => { if (!date) return ""; const days = Math.ceil((Date.parse(`${date}T00:00:00Z`) - Date.now()) / 86400000); return days < 0 ? "Đã hết hạn" : days < 90 ? "HSD còn < 90 ngày" : ""; };
 
 export default function AdminDashboard() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -118,7 +119,7 @@ export default function AdminDashboard() {
         <button className={view === "products" ? styles.activeNav : ""} onClick={() => setView("products")}>Sản phẩm {!loading && <small>{products.length}</small>}</button>
         <button className={view === "orders" ? styles.activeNav : ""} onClick={() => setView("orders")}>Đơn hàng <small>{orders.length}</small></button>
         <button className={view === "settings" ? styles.activeNav : ""} onClick={() => setView("settings")}>Cấu hình</button>
-        <a href="/admin/giao-dien">Giao diện & Nội dung</a><a href="/admin/tin-tuc">Tin tức</a><a href="/admin/thu-vien-anh">Thư viện ảnh</a><a href="/admin/danh-gia">Đánh giá</a><a href="/admin/ma-giam-gia">Mã giảm giá</a><a href="/admin/khach-hang">Khách hàng</a>
+        <a href="/admin/danh-muc">Danh mục</a><a href="/admin/giao-dien">Giao diện & Nội dung</a><a href="/admin/tin-tuc">Tin tức</a><a href="/admin/thu-vien-anh">Thư viện ảnh</a><a href="/admin/danh-gia">Đánh giá</a><a href="/admin/ma-giam-gia">Mã giảm giá</a><a href="/admin/khach-hang">Khách hàng</a>
       </nav>
       <div className={styles.sideBottom}><a href="/">← Xem cửa hàng</a><form action="/api/admin/logout" method="post"><button>Đăng xuất</button></form></div>
     </aside>
@@ -139,7 +140,7 @@ export default function AdminDashboard() {
           <div className={styles.tableHeader}><span>SẢN PHẨM</span><span>DANH MỤC</span><span>GIÁ</span><span>TỒN KHO</span><span>THAO TÁC</span></div>
           {filtered.map((product) => <div className={styles.productRow} key={product.id}>
             <span><img src={product.image} alt=""/><i><b>{product.name}</b><small>{product.brand} · /{product.slug}</small></i></span>
-            <span>{product.categoryName ?? "Chưa chọn"}<small>{product.published ? "Đang bán" : "Bản nháp"}</small></span><span><b>{money(product.price)}</b>{product.oldPrice > product.price && <del>{money(product.oldPrice)}</del>}</span>
+            <span>{product.categoryName ?? "Chưa chọn"}<small>{product.published ? "Đang bán" : "Bản nháp"}</small>{expiryWarning(product.expiryDate) && <small className={expiryWarning(product.expiryDate) === "Đã hết hạn" ? "expiry-expired" : "expiry-soon"}>{expiryWarning(product.expiryDate)}</small>}</span><span><b>{money(product.price)}</b>{product.oldPrice > product.price && <del>{money(product.oldPrice)}</del>}</span>
             <span className={product.inStock ? styles.inStock : styles.outOfStock}>{product.inStock ? "Còn hàng" : "Hết hàng"}</span>
             <span><button onClick={() => { setError(""); setEditing(product); }}>Sửa</button><button onClick={() => void duplicateProduct(product)}>Nhân bản</button><button onClick={() => void deleteProduct(product)}>Xóa</button></span>
           </div>)}

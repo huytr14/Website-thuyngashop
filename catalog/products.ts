@@ -1,77 +1,70 @@
-export const categories = [
-  { name: "Chăm sóc da", slug: "cham-soc-da" },
-  { name: "Trang điểm", slug: "trang-diem" },
-  { name: "Tóc & cơ thể", slug: "toc-co-the" },
+import type { ShopCategory } from "../lib/categories.ts";
+
+const groups = [
+  ["Thực phẩm chức năng", "Xương khớp", "Tim mạch & Tuần hoàn", "Não bộ & Trí nhớ", "Mắt", "Vitamin & Khoáng chất", "Mẹ bầu & Sau sinh", "Cho bé", "Chiều cao", "Ngủ ngon & Thư giãn", "Gan & Thải độc", "Đẹp từ bên trong", "Sức khỏe nam giới", "Sức khỏe nữ giới"],
+  ["Thực phẩm & Đồ uống", "Bánh kẹo & Socola", "Đồ uống & Bột pha", "Gia vị & Nước sốt", "Đồ hộp & Ăn liền", "Hạt & Trái cây sấy", "Sữa & Dinh dưỡng"],
+  ["Trái cây nhập khẩu", "Nho", "Táo & Lê", "Cam & Quýt", "Trái cây khác & theo mùa"],
+  ["Mỹ phẩm & Chăm sóc", "Chăm sóc da", "Trang điểm", "Nước hoa", "Chăm sóc cơ thể", "Chăm sóc tóc", "Vệ sinh cá nhân"],
+  ["Mẹ & Bé", "Sữa & Dinh dưỡng cho bé", "Tã & Đồ dùng cho bé"],
 ] as const;
 
-export type Product = {
-  id: number;
-  name: string;
-  slug: string;
-  brand: string;
-  price: number;
-  oldPrice: number;
-  image: string;
-  extraImages: string[];
-  shortDescription: string;
-  description: string;
-  variant: string;
-  inStock: boolean;
-  badge?: string;
-  category: string;
-  seoTitle?: string;
-  seoDescription?: string;
-};
-
-type BaseProduct = Pick<Product, "id" | "brand" | "name" | "price" | "oldPrice" | "image" | "badge">;
-
-const baseProducts: BaseProduct[] = [
-  { id: 1, brand: "SHISEIDO", name: "Eudermine Activating Essence", price: 2780000, oldPrice: 3850000, image: "/shiseido-eudermine-reference.png", badge: "NỔI BẬT" },
-  { id: 2, brand: "SKINCARE", name: "Sữa rửa mặt dịu nhẹ", price: 998000, oldPrice: 1320000, image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=720&q=85" },
-  { id: 3, brand: "SKINCARE", name: "Bộ chăm sóc da phục hồi", price: 1599000, oldPrice: 2300000, image: "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?auto=format&fit=crop&w=720&q=85", badge: "MỚI" },
-  { id: 4, brand: "HAIR & BODY", name: "Tinh dầu chăm sóc tóc", price: 1250000, oldPrice: 1690000, image: "https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=720&q=85" },
-  { id: 5, brand: "SKINCARE", name: "Tinh chất dưỡng da hằng ngày", price: 2190000, oldPrice: 2950000, image: "https://images.unsplash.com/photo-1611930022073-b7a4ba5fcccd?auto=format&fit=crop&w=720&q=85" },
-  { id: 6, brand: "SKINCARE", name: "Mặt nạ ngủ cấp ẩm", price: 579000, oldPrice: 760000, image: "https://images.unsplash.com/photo-1601049541289-9b1b7bbbfe19?auto=format&fit=crop&w=720&q=85" },
-  { id: 7, brand: "SKINCARE", name: "Tinh chất dưỡng sáng làn da", price: 2450000, oldPrice: 3200000, image: "https://images.unsplash.com/photo-1571781926291-c477ebfd024b?auto=format&fit=crop&w=720&q=85" },
-  { id: 8, brand: "SKINCARE", name: "Nước dưỡng da cân bằng", price: 2990000, oldPrice: 3850000, image: "https://images.unsplash.com/photo-1591130901921-3f0652bb3915?auto=format&fit=crop&w=720&q=85" },
-  { id: 9, brand: "SKINCARE", name: "Serum chăm sóc da đều màu", price: 1390000, oldPrice: 1750000, image: "https://images.unsplash.com/photo-1612817288484-6f916006741a?auto=format&fit=crop&w=720&q=85", badge: "NEW IN" },
-  { id: 10, brand: "SKINCARE", name: "Kem dưỡng ẩm mềm mịn", price: 1120000, oldPrice: 1480000, image: "https://images.unsplash.com/photo-1625772452859-1c03d5bf1137?auto=format&fit=crop&w=720&q=85" },
-  { id: 11, brand: "SKINCARE", name: "Tinh dầu dưỡng da căng bóng", price: 890000, oldPrice: 1120000, image: "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=720&q=85", badge: "GỢI Ý" },
-  { id: 12, brand: "SKINCARE", name: "Nước làm sạch dịu nhẹ", price: 445000, oldPrice: 590000, image: "https://images.unsplash.com/photo-1611930021592-a8cfd5319ceb?auto=format&fit=crop&w=720&q=85" },
-  { id: 13, brand: "SKINCARE", name: "Bộ chăm sóc da chuyên sâu", price: 2650000, oldPrice: 3450000, image: "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?auto=format&fit=crop&w=720&q=85", badge: "NỔI BẬT" },
-  { id: 14, brand: "MAKEUP", name: "Son môi sắc đỏ cổ điển", price: 825000, oldPrice: 1050000, image: "https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=720&q=85" },
-  { id: 15, brand: "SKINCARE", name: "Tinh chất dưỡng ẩm tươi mát", price: 760000, oldPrice: 980000, image: "https://images.unsplash.com/photo-1612817288484-6f916006741a?auto=format&fit=crop&w=720&q=85", badge: "MỚI" },
-  { id: 16, brand: "HAIR & BODY", name: "Sữa dưỡng thể mềm mượt", price: 685000, oldPrice: 850000, image: "https://images.unsplash.com/photo-1619451334792-150fd785ee74?auto=format&fit=crop&w=720&q=85" },
-  { id: 17, brand: "SKINCARE", name: "Tinh chất chăm sóc da rạng rỡ", price: 2290000, oldPrice: 2890000, image: "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=720&q=85", badge: "NỔI BẬT" },
-  { id: 18, brand: "SKINCARE", name: "Kem dưỡng da hằng ngày", price: 485000, oldPrice: 620000, image: "https://images.unsplash.com/photo-1601049541289-9b1b7bbbfe19?auto=format&fit=crop&w=720&q=85" },
-  { id: 19, brand: "SKINCARE", name: "Bộ dưỡng da êm dịu", price: 950000, oldPrice: 1250000, image: "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?auto=format&fit=crop&w=720&q=85" },
-  { id: 20, brand: "SKINCARE", name: "Kem làm sạch và dưỡng ẩm", price: 880000, oldPrice: 1120000, image: "https://images.unsplash.com/photo-1625772452859-1c03d5bf1137?auto=format&fit=crop&w=720&q=85" },
-  { id: 21, brand: "SKINCARE", name: "Kem chăm sóc da săn mịn", price: 2190000, oldPrice: 2850000, image: "https://images.unsplash.com/photo-1571781926291-c477ebfd024b?auto=format&fit=crop&w=720&q=85" },
-  { id: 22, brand: "SKINCARE", name: "Kem dưỡng da khô", price: 565000, oldPrice: 725000, image: "https://images.unsplash.com/photo-1611930021592-a8cfd5319ceb?auto=format&fit=crop&w=720&q=85" },
-  { id: 23, brand: "SKINCARE", name: "Tinh chất dưỡng da sáng khỏe", price: 1390000, oldPrice: 1750000, image: "https://images.unsplash.com/photo-1612817288484-6f916006741a?auto=format&fit=crop&w=720&q=85" },
-  { id: 24, brand: "SKINCARE", name: "Kem dưỡng cao cấp", price: 3650000, oldPrice: 4500000, image: "https://images.unsplash.com/photo-1611930022073-b7a4ba5fcccd?auto=format&fit=crop&w=720&q=85", badge: "CAO CẤP" },
-  { id: 25, brand: "MAKEUP", name: "Bộ trang điểm thanh lịch", price: 1090000, oldPrice: 1390000, image: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=720&q=85" },
-  { id: 26, brand: "MAKEUP", name: "Son môi màu hồng đất", price: 990000, oldPrice: 1290000, image: "https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=720&q=85" },
-  { id: 27, brand: "MAKEUP", name: "Phấn trang điểm tự nhiên", price: 235000, oldPrice: 320000, image: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=720&q=85" },
-  { id: 28, brand: "HAIR & BODY", name: "Bộ chăm sóc tóc suôn mượt", price: 1490000, oldPrice: 1890000, image: "https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=720&q=85" },
-  { id: 29, brand: "HAIR & BODY", name: "Dưỡng thể dịu nhẹ", price: 720000, oldPrice: 890000, image: "https://images.unsplash.com/photo-1619451334792-150fd785ee74?auto=format&fit=crop&w=720&q=85" },
-  { id: 30, brand: "SKINCARE", name: "Bộ dưỡng da mềm mịn", price: 1890000, oldPrice: 2390000, image: "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?auto=format&fit=crop&w=720&q=85", badge: "MỚI" },
+const slugify = (value: string) => value.normalize("NFD").replace(/\p{Diacritic}/gu, "").replace(/đ/gi, "d").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+const sampleImages = [
+  "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=900&q=85",
+  "https://images.unsplash.com/photo-1611930022073-b7a4ba5fcccd?auto=format&fit=crop&w=900&q=85",
+  "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?auto=format&fit=crop&w=900&q=85",
+  "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=900&q=85",
+  "https://images.unsplash.com/photo-1571781926291-c477ebfd024b?auto=format&fit=crop&w=900&q=85",
 ];
 
-const slugify = (value: string) => value.normalize("NFD").replace(/\p{Diacritic}/gu, "").replace(/đ/gi, "d").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+export const categories: ShopCategory[] = groups.flatMap((group, groupIndex) => {
+  const rootId = groups.slice(0, groupIndex).reduce((sum, item) => sum + item.length, 0) + 1;
+  return group.map((name, index) => ({ id: rootId + index, name, slug: slugify(name), description: "", parentId: index ? rootId : null, image: "", sortOrder: index || groupIndex, isVisible: true, requiresDisclaimer: groupIndex === 0 && index === 0 }));
+});
 
-export const categoryNameForProduct = ({ id }: Pick<Product, "id">) =>
-  [14, 25, 26, 27].includes(id) ? "Trang điểm" : [4, 16, 28, 29].includes(id) ? "Tóc & cơ thể" : "Chăm sóc da";
+export type Product = {
+  id: number; name: string; slug: string; brand: string; price: number; oldPrice: number;
+  image: string; extraImages: string[]; shortDescription: string; description: string;
+  variant: string; inStock: boolean; badge?: string; category: string; categoryId?: number | null;
+  origin?: string | null; specification?: string; expiryDate?: string | null;
+  seoTitle?: string; seoDescription?: string;
+};
 
-export const products: Product[] = baseProducts.map((product) => ({
-  ...product,
-  slug: slugify(product.name),
-  extraImages: [],
-  shortDescription: "",
-  description: "",
-  variant: "",
-  inStock: true,
-  category: categoryNameForProduct(product),
+// Catalog và ảnh đều là minh họa; đối chiếu nhãn, giá, nguồn gốc và HSD trước khi đăng bán.
+const samples: [string, string, string, number, string, string, string][] = [
+  ["Kirkland Fish Oil 1000 mg", "Kirkland", "Tim mạch & Tuần hoàn", 490000, "Mỹ", "Lọ 400 viên", "2027-12-31"],
+  ["Kirkland Glucosamine HCl", "Kirkland", "Xương khớp", 650000, "Mỹ", "Lọ 375 viên", "2027-10-31"],
+  ["Nature Made Prenatal Multi + DHA", "Nature Made", "Mẹ bầu & Sau sinh", 590000, "Mỹ", "Lọ 110 viên", "2027-08-31"],
+  ["Nature Made Vitamin D3", "Nature Made", "Vitamin & Khoáng chất", 320000, "Mỹ", "Lọ 180 viên", "2027-09-30"],
+  ["Blackmores Omega Triple", "Blackmores", "Tim mạch & Tuần hoàn", 790000, "Úc", "Lọ 150 viên", "2027-11-30"],
+  ["Centrum Adults Multivitamin", "Centrum", "Vitamin & Khoáng chất", 550000, "Mỹ", "Lọ 200 viên", "2027-06-30"],
+  ["Healthy Care Collagen", "Healthy Care", "Đẹp từ bên trong", 620000, "Úc", "Lọ 120 viên", "2027-10-31"],
+  ["Nature's Bounty Lutein", "Nature's Bounty", "Mắt", 380000, "Mỹ", "Lọ 60 viên", "2027-07-31"],
+  ["Welch's Fruit Snacks", "Welch's", "Bánh kẹo & Socola", 230000, "Mỹ", "Hộp 40 gói", "2027-05-31"],
+  ["Hershey's Kisses Milk Chocolate", "Hershey's", "Bánh kẹo & Socola", 195000, "Mỹ", "Túi 283 g", "2027-04-30"],
+  ["Kewpie Sốt mè rang", "Kewpie", "Gia vị & Nước sốt", 125000, "Nhật Bản", "Chai 380 ml", "2027-06-30"],
+  ["Knorr Bột nêm gà", "Knorr", "Gia vị & Nước sốt", 115000, "Mỹ", "Hộp 1 kg", "2027-08-31"],
+  ["Tang Bột cam", "Tang", "Đồ uống & Bột pha", 175000, "Mỹ", "Hộp 90 gói", "2027-03-31"],
+  ["Planters Hạt tổng hợp", "Planters", "Hạt & Trái cây sấy", 280000, "Mỹ", "Hũ 292 g", "2027-06-30"],
+  ["Spam Classic", "Spam", "Đồ hộp & Ăn liền", 140000, "Mỹ", "Hộp 340 g", "2028-01-31"],
+  ["Nho Shine Muscat", "Shine Muscat", "Nho", 590000, "Hàn Quốc", "Hộp 1 kg", "2026-11-15"],
+  ["Táo Envy", "Envy", "Táo & Lê", 190000, "Mỹ", "Túi 1 kg", "2026-11-15"],
+  ["Cam Navel", "Navel", "Cam & Quýt", 170000, "Mỹ", "Túi 1 kg", "2026-11-15"],
+  ["Lê Hàn Quốc", "Korean Pear", "Táo & Lê", 220000, "Hàn Quốc", "Hộp 1 kg", "2026-11-15"],
+  ["Armani Sì Passione", "Giorgio Armani", "Nước hoa", 2800000, "Pháp", "Chai 50 ml", "2028-06-30"],
+  ["Bath & Body Works Sữa tắm", "Bath & Body Works", "Chăm sóc cơ thể", 390000, "Mỹ", "Chai 295 ml", "2028-03-31"],
+  ["su:m37 Sun Stick", "su:m37", "Chăm sóc da", 690000, "Hàn Quốc", "Thỏi 18 g", "2028-05-31"],
+  ["Shiseido Eudermine Essence", "Shiseido", "Chăm sóc da", 2780000, "Nhật Bản", "Chai 145 ml", "2028-05-31"],
+  ["Maybelline SuperStay Matte Ink", "Maybelline", "Trang điểm", 290000, "Mỹ", "Thỏi 5 ml", "2028-04-30"],
+  ["Meiji Sữa thanh số 0", "Meiji", "Sữa & Dinh dưỡng cho bé", 520000, "Nhật Bản", "Hộp 24 thanh", "2027-06-30"],
+  ["Merries Tã dán size M", "Merries", "Tã & Đồ dùng cho bé", 420000, "Nhật Bản", "Gói 64 miếng", "2028-01-31"],
+];
+
+export const products: Product[] = samples.map(([name, brand, category, price, origin, specification, expiryDate], index) => ({
+  id: index + 1, name, slug: slugify(name), brand, category, price, oldPrice: price,
+  image: sampleImages[index % sampleImages.length], extraImages: [], shortDescription: "Dữ liệu sản phẩm mẫu để duyệt giao diện; vui lòng đối chiếu thông tin trên nhãn trước khi đăng bán.",
+  description: "", variant: "", inStock: true, origin, specification, expiryDate,
+  categoryId: categories.find((item) => item.name === category)?.id,
 }));
 
 export const formatPrice = (value: number) => `${value.toLocaleString("vi-VN")}₫`;

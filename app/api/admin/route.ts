@@ -11,6 +11,7 @@ export async function GET() {
     const [products, categories, orders, settings, messages, links] = await Promise.all([
       db.select({
         id: storeProducts.id, name: storeProducts.name, slug: storeProducts.slug, brand: storeProducts.brand,
+        origin: storeProducts.origin, specification: storeProducts.specification, expiryDate: storeProducts.expiryDate,
         price: storeProducts.price, oldPrice: storeProducts.oldPrice, image: storeProducts.image,
         extraImages: storeProducts.extraImages, shortDescription: storeProducts.shortDescription,
         description: storeProducts.description, variant: storeProducts.variant, inStock: storeProducts.inStock,

@@ -30,6 +30,7 @@ body { background: #fff; }
 .header .search { width: clamp(145px, 17vw, 255px); border: 1px solid #eee; padding: 8px 12px; }
 .header .search input { font-size: 10px; }
 .header .search svg { flex: none; color: #555; }
+@media(min-width:901px){.header{height:112px;grid-template-rows:70px 42px}.header .brand-logo{grid-row:1}.header-actions{grid-row:1}.header .nav{grid-column:1/-1;grid-row:2;justify-content:center;align-self:stretch;align-items:center;border-top:1px solid #f1e9ec}}
 .mobile-search-button, .mobile-search { display: none; }
 .cart-button { display: inline-flex; align-items: center; gap: 6px; font-size: 10px; white-space: nowrap; }
 .cart-button b { background: var(--ink); }
@@ -265,3 +266,6 @@ body{font-size:14px;line-height:1.5}
   .detail-copy h2{font-size:27px!important}.detail-actions button{font-size:11px}.feature-banner p,.feature-banner a{font-size:11px}
   .cart-button b{font-size:11px!important}
 }
+.header .nav .nav-category{position:relative}.header .nav .nav-children{display:none;position:absolute;top:100%;left:0;min-width:210px;max-height:70vh;overflow:auto;padding:10px;background:#fff;box-shadow:0 8px 22px #0002;white-space:normal}.header .nav .nav-category:hover .nav-children,.header .nav .nav-category:focus-within .nav-children{display:grid}.header .nav .nav-children a{padding:8px 10px;font-size:12px}
+@media(max-width:900px){.header .nav.open{overflow-y:auto}.header .nav .nav-category{width:100%}.header .nav .nav-children{display:grid;position:static;box-shadow:none;max-height:none;padding:0 0 8px 20px}.header .nav .nav-children a{font-family:var(--font-sans);font-size:14px!important;padding:10px 0}}
+.brand-strip a{color:#6b263d;font-family:var(--font-display),serif;font-size:clamp(20px,2vw,30px);font-weight:600;white-space:nowrap;text-decoration:none}.brand-strip a:hover{text-decoration:underline}.brand-strip>div{flex-wrap:wrap;justify-content:center}.tpcn-disclaimer{border-left:4px solid #800028;background:#f9f0f3;padding:18px;font-weight:700;line-height:1.6;color:#800028}.department-rail{background:#fff}.department-rail .product-image{height:auto;aspect-ratio:4/5}

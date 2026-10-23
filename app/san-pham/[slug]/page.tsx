@@ -21,5 +21,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   if (!product) notFound();
   const [reviews, summaries, site] = await Promise.all([getApprovedProductReviews(product.id), getApprovedReviewSummaries(), getSiteContent()]);
   const related = catalog.products.filter((item) => item.category === product.category && item.id !== product.id).slice(0, 4);
-  return <ProductPageClient product={product} products={catalog.products} related={related} reviews={reviews} summaries={summaries} site={site}/>;
+  const jsonLd = { "@context": "https://schema.org", "@type": "Product", name: product.name, image: product.image, brand: product.brand ? { "@type": "Brand", name: product.brand } : undefined, offers: { "@type": "Offer", priceCurrency: "VND", price: product.price, availability: product.inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock" } };
+  return <><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}/><ProductPageClient product={product} products={catalog.products} categoryTree={catalog.categoryTree} related={related} reviews={reviews} summaries={summaries} site={site}/></>;
 }

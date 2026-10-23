@@ -5,6 +5,7 @@ import { sanitizeRichText } from "@/lib/sanitize-rich-text";
 import { defaultSiteContent, mergeSiteContent } from "@/lib/site-content";
 import type { Product } from "@/catalog/products";
 import { categories as fallbackCategories, products as fallbackProducts } from "@/catalog/products";
+import { visibleCategories, type ShopCategory } from "@/lib/categories";
 import { storeCategories, storeMedia, storeProductMedia, storeProducts, storeReviews, storeShopSettings, storeUsers } from "./store-schema";
 
 export type ReviewSummary = { count: number; average: number };
@@ -14,7 +15,7 @@ export const defaultShopSettings = {
   id: 1, freeShippingThreshold: 1000000, standardShippingFee: 30000,
   siteContent: defaultSiteContent,
   bankName: "", bankAccountName: "", bankAccountNumber: "", vietQrUrl: "", shopEmail: "",
-  aboutContent: "THUYNGA Shop tuyển chọn những sản phẩm làm đẹp phù hợp cho nhịp sống hiện đại.",
+  aboutContent: "THUYNGA Shop — hàng nhập khẩu chính hãng: thực phẩm chức năng, thực phẩm, trái cây, mỹ phẩm và chăm sóc cá nhân.",
   contactContent: "Hãy để lại lời nhắn, THUYNGA Shop sẽ phản hồi trong thời gian sớm nhất.",
   privacyPolicy: "Thông tin khách hàng chỉ được sử dụng để xử lý đơn hàng và hỗ trợ mua sắm.",
   shippingPolicy: "Đơn hàng được giao theo phương thức vận chuyển đã chọn khi thanh toán.",
@@ -28,9 +29,9 @@ export function openStoreDb() {
   return { db: drizzle(client), close: () => client.end() };
 }
 
-export async function getStoreCatalog(): Promise<{ products: Product[]; categories: string[] }> {
+export async function getStoreCatalog(): Promise<{ products: Product[]; categories: string[]; categoryTree: ShopCategory[] }> {
   if (!process.env.DATABASE_URL) {
-    return { products: fallbackProducts, categories: ["Tất cả", ...fallbackCategories.map(({ name }) => name)] };
+    return { products: fallbackProducts, categories: ["Tất cả", ...fallbackCategories.filter(({ parentId }) => !parentId).map(({ name }) => name)], categoryTree: fallbackCategories };
   }
 
   const { db, close } = openStoreDb();
@@ -42,6 +43,9 @@ export async function getStoreCatalog(): Promise<{ products: Product[]; categori
         name: storeProducts.name,
         slug: storeProducts.slug,
         brand: storeProducts.brand,
+        origin: storeProducts.origin,
+        specification: storeProducts.specification,
+        expiryDate: storeProducts.expiryDate,
         price: storeProducts.price,
         oldPrice: storeProducts.oldPrice,
         image: storeProducts.image,
@@ -54,14 +58,21 @@ export async function getStoreCatalog(): Promise<{ products: Product[]; categori
         seoDescription: storeProducts.seoDescription,
         badge: storeProducts.badge,
         category: storeCategories.name,
+        categoryId: storeProducts.categoryId,
       }).from(storeProducts).innerJoin(storeCategories, eq(storeProducts.categoryId, storeCategories.id)).where(eq(storeProducts.published, true)).orderBy(asc(storeProducts.id)),
-      db.select({ name: storeCategories.name }).from(storeCategories).orderBy(asc(storeCategories.id)),
+      db.select().from(storeCategories).orderBy(asc(storeCategories.sortOrder), asc(storeCategories.id)),
       db.select({ productId: storeProductMedia.productId, url: storeMedia.url, sortOrder: storeProductMedia.sortOrder }).from(storeProductMedia).innerJoin(storeMedia, eq(storeProductMedia.mediaId, storeMedia.id)).orderBy(asc(storeProductMedia.sortOrder)),
     ]);
 
+    const mediaImages = await db.select({ id: storeMedia.id, url: storeMedia.url }).from(storeMedia);
+    const mediaById = new Map(mediaImages.map((item) => [item.id, item.url]));
+    const tree = categoryRows.map((item) => ({ ...item, image: item.imageMediaId ? mediaById.get(item.imageMediaId) ?? "" : "" }));
+    const visible = visibleCategories(tree);
+    const ids = new Set(visible.map((item) => item.id));
     return {
-      products: productRows.map((product) => { const images = mediaRows.filter((item) => item.productId === product.id).map((item) => item.url); return { ...product, description: sanitizeRichText(product.description), image: images[0] ?? product.image, extraImages: images.length ? images.slice(1) : product.extraImages, badge: product.badge ?? undefined }; }),
-      categories: ["Tất cả", ...categoryRows.map(({ name }) => name)],
+      products: productRows.filter((product) => product.categoryId && ids.has(product.categoryId)).map((product) => { const images = mediaRows.filter((item) => item.productId === product.id).map((item) => item.url); return { ...product, description: sanitizeRichText(product.description), image: images[0] ?? product.image, extraImages: images.length ? images.slice(1) : product.extraImages, badge: product.badge ?? undefined }; }),
+      categories: ["Tất cả", ...visible.filter(({ parentId }) => !parentId).map(({ name }) => name)],
+      categoryTree: tree,
     };
   } finally {
     await close();
