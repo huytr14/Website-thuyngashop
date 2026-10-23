@@ -1,4 +1,5 @@
 import { hasAdminSession } from "@/app/admin-auth";
+import { revalidatePath } from "next/cache";
 import { productInputSchema } from "@/app/admin-products";
 import { saveProduct } from "@/db/save-product";
 
@@ -8,6 +9,7 @@ export async function POST(request: Request) {
   if (!parsed.success) return Response.json({ error: parsed.error.issues.map((issue) => issue.message).join("; ") }, { status: 400 });
   try {
     const product = await saveProduct(parsed.data);
+    revalidatePath("/"); revalidatePath("/san-pham/[slug]", "page"); revalidatePath("/danh-muc/[slug]", "page");
     return Response.json({ product }, { status: 201 });
   } catch (error) {
     if ((error as { code?: string }).code === "23505") return Response.json({ error: "Slug sản phẩm đã tồn tại" }, { status: 409 });

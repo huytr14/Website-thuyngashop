@@ -57,6 +57,13 @@
       "when": 1792737917768,
       "tag": "0007_chilly_mad_thinker",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792741231856,
+      "tag": "0008_swift_miss_america",
+      "breakpoints": true
     }
   ]
 }

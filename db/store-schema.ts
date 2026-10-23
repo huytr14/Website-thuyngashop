@@ -69,7 +69,9 @@ export const storeProducts = pgTable("products", {
   trackInventory: boolean("track_inventory").notNull().default(false),
   inventoryQuantity: integer("inventory_quantity").notNull().default(0),
   variantOptions: jsonb("variant_options").$type<{ name: string; values: string[] }[]>().notNull().default(sql`'[]'::jsonb`),
-  variantRows: jsonb("variant_rows").$type<{ name: string; price: number; quantity: number }[]>().notNull().default(sql`'[]'::jsonb`),
+  variantRows: jsonb("variant_rows").$type<{ name: string; price: number; quantity: number; image?: string }[]>().notNull().default(sql`'[]'::jsonb`),
+  flashPrice: integer("flash_price"),
+  flashStock: integer("flash_stock"),
   seoTitle: text("seo_title").notNull().default(""),
   seoDescription: text("seo_description").notNull().default(""),
   badge: varchar("badge", { length: 50 }),
@@ -122,6 +124,7 @@ export const storeOrderItems = pgTable("order_items", {
   orderId: integer("order_id").notNull().references(() => storeOrders.id, { onDelete: "cascade" }),
   productId: integer("product_id").references(() => storeProducts.id, { onDelete: "set null" }),
   productName: text("product_name").notNull(),
+  variantName: text("variant_name"),
   price: integer("price").notNull(),
   quantity: integer("quantity").notNull(),
 });
@@ -131,6 +134,9 @@ export const storeShopSettings = pgTable("shop_settings", {
   siteContent: jsonb("site_content").$type<SiteContent>().notNull().default(sql`'{}'::jsonb`),
   freeShippingThreshold: integer("free_shipping_threshold").notNull().default(1000000),
   standardShippingFee: integer("standard_shipping_fee").notNull().default(30000),
+  flashSaleTitle: text("flash_sale_title").notNull().default("Flash Sale"),
+  flashSaleStart: timestamp("flash_sale_start", { withTimezone: true }),
+  flashSaleEnd: timestamp("flash_sale_end", { withTimezone: true }),
   bankName: varchar("bank_name", { length: 150 }).notNull().default(""),
   bankAccountName: varchar("bank_account_name", { length: 150 }).notNull().default(""),
   bankAccountNumber: varchar("bank_account_number", { length: 50 }).notNull().default(""),
@@ -164,6 +170,12 @@ export const storeAddresses = pgTable("addresses", {
   address: text("address").notNull(), district: varchar("district", { length: 100 }).notNull(), city: varchar("city", { length: 100 }).notNull(),
   isDefault: boolean("is_default").notNull().default(false),
 });
+
+export const storeWishlistItems = pgTable("wishlist_items", {
+  userId: text("user_id").notNull().references(() => storeUsers.id, { onDelete: "cascade" }),
+  productId: integer("product_id").notNull().references(() => storeProducts.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (item) => [primaryKey({ columns: [item.userId, item.productId] })]);
 
 export const storeContactMessages = pgTable("contact_messages", {
   id: serial("id").primaryKey(), name: varchar("name", { length: 150 }).notNull(), email: varchar("email", { length: 255 }).notNull(),

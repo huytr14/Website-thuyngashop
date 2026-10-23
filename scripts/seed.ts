@@ -52,6 +52,10 @@ try {
     const { category: _category, id: _id, ...row } = values;
     // ponytail: seed không ghi đè sản phẩm đã được shop sửa; cập nhật mẫu qua admin nếu cần.
     await db.insert(storeProducts).values(row).onConflictDoNothing();
+    if (product.variantRows?.length || product.extraImages.length) {
+      const existing = (await db.select({ id: storeProducts.id, variantRows: storeProducts.variantRows, extraImages: storeProducts.extraImages }).from(storeProducts).where(eq(storeProducts.slug, product.slug)).limit(1))[0];
+      if (existing) { const enrichment = { ...(product.variantRows?.length && !existing.variantRows.length ? { variantOptions: product.variantOptions, variantRows: product.variantRows } : {}), ...(product.extraImages.length && !existing.extraImages.length ? { extraImages: product.extraImages } : {}) }; if (Object.keys(enrichment).length) await db.update(storeProducts).set(enrichment).where(eq(storeProducts.id, existing.id)); }
+    }
   }
 
   console.log(`Seeded ${categories.length} categories and ${products.length} products.`);

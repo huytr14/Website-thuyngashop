@@ -23,7 +23,7 @@ export default function Header({ menuOpen, searchOpen, query, count, setMenuOpen
   const searchHref = browseFromProduct ? `/?q=${encodeURIComponent(query.trim())}#deals` : "#deals";
   const visible = visibleCategories(categoryTree);
   return <>
-    {site.announcement.enabled && <div className="store-note"><span>{site.announcement.kicker}</span><span>{site.announcement.text}</span>{site.announcement.link ? <a href={browseFromProduct && site.announcement.link.startsWith("#") ? `/${site.announcement.link}` : site.announcement.link}>{site.announcement.linkText} <ArrowUpRight size={13}/></a> : <span>{site.announcement.linkText}</span>}</div>}
+    {site.announcement.enabled && <div className="store-note"><span>{site.announcement.kicker}</span><span>{site.announcement.text}</span>{site.announcement.promo && <span>{site.announcement.promo}</span>}{site.announcement.link ? <a href={browseFromProduct && site.announcement.link.startsWith("#") ? `/${site.announcement.link}` : site.announcement.link}>{site.announcement.linkText} <ArrowUpRight size={13}/></a> : <span>{site.announcement.linkText}</span>}</div>}
     <header className="header">
       <button className="mobile-menu" onClick={() => setMenuOpen(!menuOpen)} aria-label="Mở menu"><Menu size={22}/></button>
       <nav className={menuOpen ? "nav open" : "nav"}>
@@ -41,6 +41,7 @@ export default function Header({ menuOpen, searchOpen, query, count, setMenuOpen
         <button className="cart-button" onClick={openCart} aria-label={`Mở túi hàng, ${count} sản phẩm`}><ShoppingBag size={18}/><span>Túi hàng</span><b>{count}</b></button>
       </div>
     </header>
+    <nav className="mobile-bottom-nav" aria-label="Điều hướng mobile"><a href="/" aria-current={typeof location !== "undefined" && location.pathname === "/" ? "page" : undefined}>Trang chủ</a><button type="button" aria-current={typeof location !== "undefined" && location.pathname.startsWith("/danh-muc") ? "page" : undefined} onClick={() => setMenuOpen(!menuOpen)}>Danh mục</button><button type="button" aria-current={searchOpen ? "page" : undefined} onClick={() => setSearchOpen(true)}>Tìm kiếm</button><button type="button" onClick={openCart}>Giỏ hàng {count > 0 && `(${count})`}</button><a href="/tai-khoan" aria-current={typeof location !== "undefined" && location.pathname === "/tai-khoan" ? "page" : undefined}>Tài khoản</a></nav>
     {searchOpen && <div className="mobile-search"><Search size={17}/><input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => { if (browseFromProduct && e.key === "Enter") location.assign(searchHref); }} placeholder="Tìm sản phẩm, thương hiệu..."/><a href={searchHref} onClick={() => setSearchOpen(false)}>XEM KẾT QUẢ</a></div>}
   </>;
 }

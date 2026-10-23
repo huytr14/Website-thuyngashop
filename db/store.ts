@@ -13,6 +13,7 @@ export type ProductReview = { id: number; rating: number; title: string; content
 
 export const defaultShopSettings = {
   id: 1, freeShippingThreshold: 1000000, standardShippingFee: 30000,
+  flashSaleTitle: "Flash Sale", flashSaleStart: null as Date | null, flashSaleEnd: null as Date | null,
   siteContent: defaultSiteContent,
   bankName: "", bankAccountName: "", bankAccountNumber: "", vietQrUrl: "", shopEmail: "",
   aboutContent: "THUYNGA Shop — hàng nhập khẩu chính hãng: thực phẩm chức năng, thực phẩm, trái cây, mỹ phẩm và chăm sóc cá nhân.",
@@ -37,7 +38,7 @@ export async function getStoreCatalog(): Promise<{ products: Product[]; categori
   const { db, close } = openStoreDb();
 
   try {
-    const [productRows, categoryRows, mediaRows] = await Promise.all([
+    const [productRows, categoryRows, mediaRows, soldRows] = await Promise.all([
       db.select({
         id: storeProducts.id,
         name: storeProducts.name,
@@ -54,6 +55,11 @@ export async function getStoreCatalog(): Promise<{ products: Product[]; categori
         description: storeProducts.description,
         variant: storeProducts.variant,
         inStock: storeProducts.inStock,
+        trackInventory: storeProducts.trackInventory,
+        variantOptions: storeProducts.variantOptions,
+        variantRows: storeProducts.variantRows,
+        flashPrice: storeProducts.flashPrice,
+        flashStock: storeProducts.flashStock,
         seoTitle: storeProducts.seoTitle,
         seoDescription: storeProducts.seoDescription,
         badge: storeProducts.badge,
@@ -62,15 +68,17 @@ export async function getStoreCatalog(): Promise<{ products: Product[]; categori
       }).from(storeProducts).innerJoin(storeCategories, eq(storeProducts.categoryId, storeCategories.id)).where(eq(storeProducts.published, true)).orderBy(asc(storeProducts.id)),
       db.select().from(storeCategories).orderBy(asc(storeCategories.sortOrder), asc(storeCategories.id)),
       db.select({ productId: storeProductMedia.productId, url: storeMedia.url, sortOrder: storeProductMedia.sortOrder }).from(storeProductMedia).innerJoin(storeMedia, eq(storeProductMedia.mediaId, storeMedia.id)).orderBy(asc(storeProductMedia.sortOrder)),
+      db.execute(sql`select oi.product_id as "productId", sum(oi.quantity)::int as "soldCount" from order_items oi join orders o on o.id = oi.order_id where o.status <> 'HUY' group by oi.product_id`),
     ]);
 
+    const sold = new Map((soldRows.rows as { productId: number; soldCount: number }[]).map((row) => [row.productId, row.soldCount]));
     const mediaImages = await db.select({ id: storeMedia.id, url: storeMedia.url }).from(storeMedia);
     const mediaById = new Map(mediaImages.map((item) => [item.id, item.url]));
     const tree = categoryRows.map((item) => ({ ...item, image: item.imageMediaId ? mediaById.get(item.imageMediaId) ?? "" : "" }));
     const visible = visibleCategories(tree);
     const ids = new Set(visible.map((item) => item.id));
     return {
-      products: productRows.filter((product) => product.categoryId && ids.has(product.categoryId)).map((product) => { const images = mediaRows.filter((item) => item.productId === product.id).map((item) => item.url); return { ...product, description: sanitizeRichText(product.description), image: images[0] ?? product.image, extraImages: images.length ? images.slice(1) : product.extraImages, badge: product.badge ?? undefined }; }),
+      products: productRows.filter((product) => product.categoryId && ids.has(product.categoryId)).map((product) => { const images = mediaRows.filter((item) => item.productId === product.id).map((item) => item.url); return { ...product, description: sanitizeRichText(product.description), image: images[0] ?? product.image, extraImages: images.length ? images.slice(1) : product.extraImages, badge: product.badge ?? undefined, soldCount: sold.get(product.id) ?? 0 }; }),
       categories: ["Tất cả", ...visible.filter(({ parentId }) => !parentId).map(({ name }) => name)],
       categoryTree: tree,
     };

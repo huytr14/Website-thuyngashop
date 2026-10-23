@@ -25,11 +25,16 @@ export const productInputSchema = z.object({
   trackInventory: z.boolean().default(false),
   inventoryQuantity: z.coerce.number().int().nonnegative().default(0),
   variantOptions: z.array(z.object({ name: z.string().trim().min(1), values: z.array(z.string().trim().min(1)) })).default([]),
-  variantRows: z.array(z.object({ name: z.string(), price: z.coerce.number().int().nonnegative(), quantity: z.coerce.number().int().nonnegative() })).default([]),
+  variantRows: z.array(z.object({ name: z.string().trim().min(1).max(300), price: z.coerce.number().int().nonnegative(), quantity: z.coerce.number().int().nonnegative(), image: image.optional() })).default([]),
+  flashPrice: z.coerce.number().int().nonnegative().nullable().default(null),
+  flashStock: z.coerce.number().int().nonnegative().nullable().default(null),
   seoTitle: z.string().trim().max(200).default(""),
   seoDescription: z.string().trim().max(500).default(""),
   mediaIds: z.array(z.number().int().positive()).max(21).default([]),
 }).superRefine((value, context) => {
+  const combinations = value.variantOptions.reduce<string[]>((current, option) => current.flatMap((prefix) => option.values.map((tag) => [prefix, tag].filter(Boolean).join(" / "))), [""]).filter(Boolean);
+  if (value.variantRows.length && (value.variantRows.length !== combinations.length || value.variantRows.some((row) => !combinations.includes(row.name)))) context.addIssue({ code: "custom", path: ["variantRows"], message: "Dòng biến thể không khớp thuộc tính" });
+  if (value.flashPrice !== null && value.flashPrice === 0) context.addIssue({ code: "custom", path: ["flashPrice"], message: "Giá Flash phải lớn hơn 0" });
   if (value.oldPrice && value.oldPrice < value.price) context.addIssue({ code: "custom", path: ["oldPrice"], message: "Giá gốc phải lớn hơn hoặc bằng giá bán" });
   if (value.published && !value.price) context.addIssue({ code: "custom", path: ["price"], message: "Đang bán cần giá bán > 0" });
   if (value.published && !(value.image || value.mediaIds.length)) context.addIssue({ code: "custom", path: ["image"], message: "Đang bán cần ít nhất 1 ảnh" });

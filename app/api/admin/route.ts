@@ -18,6 +18,7 @@ export async function GET() {
         badge: storeProducts.badge, categoryId: storeProducts.categoryId, categoryName: storeCategories.name,
         published: storeProducts.published, trackInventory: storeProducts.trackInventory, inventoryQuantity: storeProducts.inventoryQuantity,
         variantOptions: storeProducts.variantOptions, variantRows: storeProducts.variantRows, seoTitle: storeProducts.seoTitle, seoDescription: storeProducts.seoDescription,
+        flashPrice: storeProducts.flashPrice, flashStock: storeProducts.flashStock,
       }).from(storeProducts).leftJoin(storeCategories, eq(storeProducts.categoryId, storeCategories.id)).orderBy(asc(storeProducts.id)),
       db.select().from(storeCategories).orderBy(asc(storeCategories.id)),
       db.select().from(storeOrders).orderBy(desc(storeOrders.createdAt)),

@@ -28,6 +28,10 @@ export type Product = {
   variant: string; inStock: boolean; badge?: string; category: string; categoryId?: number | null;
   origin?: string | null; specification?: string; expiryDate?: string | null;
   seoTitle?: string; seoDescription?: string;
+  variantOptions?: { name: string; values: string[] }[];
+  variantRows?: { name: string; price: number; quantity: number; image?: string }[];
+  trackInventory?: boolean;
+  flashPrice?: number | null; flashStock?: number | null; soldCount?: number;
 };
 
 // Catalog và ảnh đều là minh họa; đối chiếu nhãn, giá, nguồn gốc và HSD trước khi đăng bán.
@@ -66,5 +70,13 @@ export const products: Product[] = samples.map(([name, brand, category, price, o
   description: "", variant: "", inStock: true, origin, specification, expiryDate,
   categoryId: categories.find((item) => item.name === category)?.id,
 }));
+
+for (const product of products.slice(0, 6)) product.extraImages = [1, 2, 3].map((offset) => sampleImages[(product.id - 1 + offset) % sampleImages.length]);
+const sampleVariants: Record<string, { name: string; values: string[]; prices: number[]; image?: string }> = {
+  "Kirkland Fish Oil 1000 mg": { name: "Quy cách", values: ["100 viên", "200 viên"], prices: [290000, 490000], image: sampleImages[1] },
+  "Bath & Body Works Sữa tắm": { name: "Mùi hương", values: ["Hoa hồng", "Vani"], prices: [390000, 420000] },
+  "Shiseido Eudermine Essence": { name: "Dung tích", values: ["145ml", "200ml"], prices: [2780000, 3280000] },
+};
+for (const product of products) { const sample = sampleVariants[product.name]; if (sample) { product.variantOptions = [{ name: sample.name, values: sample.values }]; product.variantRows = sample.values.map((name, index) => ({ name, price: sample.prices[index], quantity: 10, ...(index === 1 && sample.image ? { image: sample.image } : {}) })); } }
 
 export const formatPrice = (value: number) => `${value.toLocaleString("vi-VN")}₫`;

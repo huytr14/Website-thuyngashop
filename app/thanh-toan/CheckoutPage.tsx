@@ -3,15 +3,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Product } from "@/catalog/products";
 import { formatPrice as format } from "@/catalog/products";
-import { CART_STORAGE_KEY, parseCart } from "@/lib/cart";
+import { CART_STORAGE_KEY, cartItem, cartLines, parseCart } from "@/lib/cart";
+import { pricedLine } from "@/lib/product-pricing";
 import { shippingFee } from "@/lib/commerce";
 import type { SiteContent } from "@/lib/site-content";
 
-type Settings = { freeShippingThreshold: number; standardShippingFee: number; bankName: string; bankAccountName: string; bankAccountNumber: string; vietQrUrl: string };
+type Settings = { freeShippingThreshold: number; standardShippingFee: number; bankName: string; bankAccountName: string; bankAccountNumber: string; vietQrUrl: string; flashSaleStart?: Date | string | null; flashSaleEnd?: Date | string | null };
 type Quote = { subtotal: number; shipping: number; discount: number; total: number; voucherCode: string };
 
 export default function CheckoutPage({ products, settings, site }: { products: Product[]; settings: Settings; site: SiteContent }) {
-  const [cart, setCart] = useState<Record<number, number>>({});
+  const [cart, setCart] = useState<Record<string, number>>({});
   const [loaded, setLoaded] = useState(false);
   const [payment, setPayment] = useState<"COD" | "BANK_TRANSFER">("COD");
   const [voucherCode, setVoucherCode] = useState("");
@@ -23,10 +24,10 @@ export default function CheckoutPage({ products, settings, site }: { products: P
   const idempotencyKey = useRef("");
 
   useEffect(() => { setCart(parseCart(localStorage.getItem(CART_STORAGE_KEY))); setLoaded(true); }, []);
-  const lines = useMemo(() => products.filter(({ id }) => cart[id]), [cart, products]);
-  const subtotal = lines.reduce((sum, product) => sum + product.price * cart[product.id], 0);
+  const lines = useMemo(() => cartLines(cart, products), [cart, products]);
+  const subtotal = lines.reduce((sum, { product, variantName, quantity }) => sum + (pricedLine(product, variantName, settings)?.price ?? product.price) * quantity, 0);
   const currentQuote = quote ?? { subtotal, shipping: subtotal ? shippingFee(subtotal, settings.freeShippingThreshold, settings.standardShippingFee) : 0, discount: 0, total: subtotal + (subtotal ? shippingFee(subtotal, settings.freeShippingThreshold, settings.standardShippingFee) : 0), voucherCode: "" };
-  const items = lines.map(({ id }) => ({ productId: id, quantity: cart[id] }));
+  const items = lines.map(({ key, quantity }) => ({ ...cartItem(key), quantity }));
 
   const applyVoucher = async () => {
     setVoucherMessage("");
@@ -92,7 +93,7 @@ export default function CheckoutPage({ products, settings, site }: { products: P
       </section>
       <aside className="order-summary">
         <h2>Đơn hàng của bạn</h2>
-        {lines.map((product) => <div className="summary-line" key={product.id}><div><img src={product.image} alt=""/><b>{cart[product.id]}</b></div><span><small>{product.brand}</small>{product.name}</span><strong>{format(product.price * cart[product.id])}</strong></div>)}
+        {lines.map(({ key, product, variantName, quantity }) => <div className="summary-line" key={key}><div><img src={pricedLine(product, variantName, settings)?.image || product.image} alt=""/><b>{quantity}</b></div><span><small>{product.brand}</small>{product.name}{variantName && <small>{variantName}</small>}</span><strong>{format((pricedLine(product, variantName, settings)?.price ?? product.price) * quantity)}</strong></div>)}
         <div className="voucher"><input value={voucherCode} onChange={(event) => { setVoucherCode(event.target.value.toUpperCase()); setQuote(null); }} maxLength={50} placeholder="Mã giảm giá"/><button type="button" onClick={() => void applyVoucher()}>ÁP DỤNG</button></div>
         {voucherMessage && <p className="voucher-message">{voucherMessage}</p>}
         <div className="totals"><p><span>Tạm tính</span><b>{format(currentQuote.subtotal)}</b></p><p><span>Vận chuyển</span><b>{currentQuote.shipping ? format(currentQuote.shipping) : "Miễn phí"}</b></p>{currentQuote.discount > 0 && <p><span>Giảm giá</span><b>−{format(currentQuote.discount)}</b></p>}<p className="grand"><span>Tổng cộng</span><b>{format(currentQuote.total)}</b></p></div>

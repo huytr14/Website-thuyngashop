@@ -36,6 +36,7 @@ test("cây danh mục, sản phẩm TPCN, facet, brand và CSV đường dẫn",
     await expect(page.locator(".department-rail")).toHaveCount(2);
 
     await page.goto("/admin");
+    await page.getByRole("button", { name: /Sản phẩm \d+/ }).click();
     await page.getByRole("button", { name: /THÊM SẢN PHẨM/ }).click();
     await page.getByLabel("Tên sản phẩm").fill(productName);
     await page.getByRole("button", { name: "Lưu", exact: true }).click();

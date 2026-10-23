@@ -11,14 +11,17 @@ import ProductGrid from "@/components/storefront/ProductGrid";
 import type { Product } from "@/components/storefront/types";
 import type { ReviewSummary } from "@/db/store";
 import { formatPrice as format } from "@/catalog/products";
-import { CART_STORAGE_KEY, parseCart, storeCart } from "@/lib/cart";
+import { CART_STORAGE_KEY, cartItem, cartLines, parseCart, storeCart } from "@/lib/cart";
+import { pricedLine } from "@/lib/product-pricing";
+import { flashActive } from "@/lib/product-pricing";
+import { useWishlist } from "@/lib/wishlist";
 import { defaultSiteContent, type SiteContent } from "@/lib/site-content";
 import { categoryDescendants, visibleCategories, type ShopCategory } from "@/lib/categories";
 
-type StorefrontProps = { products: Product[]; categories: string[]; categoryTree: ShopCategory[]; reviewSummaries: Record<number, ReviewSummary>; policies: { shipping: string; returns: string; contact: string }; site?: SiteContent };
+type StorefrontProps = { products: Product[]; categories: string[]; categoryTree: ShopCategory[]; reviewSummaries: Record<number, ReviewSummary>; policies: { shipping: string; returns: string; contact: string }; site?: SiteContent; flashSettings?: { flashSaleTitle?: string; flashSaleStart?: Date | string | null; flashSaleEnd?: Date | string | null } };
 
-export default function Storefront({ products, categories, categoryTree, reviewSummaries, policies, site = defaultSiteContent }: StorefrontProps) {
-  const [cart, setCart] = useState<Record<number, number>>({});
+export default function Storefront({ products, categories, categoryTree, reviewSummaries, policies, site = defaultSiteContent, flashSettings = {} }: StorefrontProps) {
+  const [cart, setCart] = useState<Record<string, number>>({});
   const [cartOpen, setCartOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -30,11 +33,17 @@ export default function Storefront({ products, categories, categoryTree, reviewS
   const [heroIndex, setHeroIndex] = useState(0);
   const [showAllProducts, setShowAllProducts] = useState(false);
   const [brandFilter, setBrandFilter] = useState("");
+  const wishlist = useWishlist();
+  const [now, setNow] = useState(0);
+  useEffect(() => { setNow(Date.now()); const timer = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(timer); }, []);
+  const flashProducts = flashActive(flashSettings, new Date(now)) ? products.filter((item) => item.flashPrice != null && (item.flashStock == null || item.flashStock > 0)) : [];
+  const secondsLeft = Math.max(0, Math.floor((new Date(flashSettings.flashSaleEnd ?? 0).getTime() - now) / 1000));
+  const cardPrice = (item: Product) => flashActive(flashSettings) && item.flashPrice != null ? item.flashPrice : item.price;
   const roots = visibleCategories(categoryTree).filter(({ parentId }) => !parentId);
 
   useEffect(() => {
     const available = new Set(products.map(({ id }) => id));
-    setCart(Object.fromEntries(Object.entries(parseCart(localStorage.getItem(CART_STORAGE_KEY))).filter(([id]) => available.has(Number(id)))));
+    setCart(Object.fromEntries(Object.entries(parseCart(localStorage.getItem(CART_STORAGE_KEY))).filter(([key]) => available.has(cartItem(key).productId))));
     const params = new URLSearchParams(location.search);
     setQuery(params.get("q") ?? "");
     setBrandFilter(params.get("brand") ?? "");
@@ -50,23 +59,25 @@ export default function Storefront({ products, categories, categoryTree, reviewS
   ).sort((a, b) => sort === "price-asc" ? a.price - b.price : sort === "price-desc" ? b.price - a.price : a.id - b.id);
   const count = Object.values(cart).reduce((a, b) => a + b, 0);
   const subtotal = useMemo(
-    () => products.reduce((sum, p) => sum + p.price * (cart[p.id] || 0), 0),
-    [cart]
+    () => cartLines(cart, products).reduce((sum, { product, variantName, quantity }) => sum + (pricedLine(product, variantName, flashSettings)?.price ?? product.price) * quantity, 0),
+    [cart, products, flashSettings]
   );
   const visibleProducts = filtered.slice(0, showAllProducts || query ? undefined : 12);
 
   const add = (id: number, quantity = 1) => {
+    if (products.find((item) => item.id === id)?.variantRows?.length) return location.assign(`/san-pham/${products.find((item) => item.id === id)!.slug}`);
     const next = { ...cart, [id]: Math.min(99, (cart[id] || 0) + quantity) };
     setCart(next);
     storeCart(next);
     setCartOpen(true);
   };
   const buyNow = (id: number, quantity = 1) => {
+    if (products.find((item) => item.id === id)?.variantRows?.length) return location.assign(`/san-pham/${products.find((item) => item.id === id)!.slug}`);
     const next = { ...cart, [id]: Math.min(99, (cart[id] || 0) + quantity) };
     storeCart(next);
     location.assign("/thanh-toan");
   };
-  const update = (id: number, delta: number) =>
+  const update = (id: string, delta: number) =>
     setCart((c) => {
       const next = Math.max(0, (c[id] || 0) + delta);
       const copy = { ...c, [id]: next };
@@ -80,7 +91,8 @@ export default function Storefront({ products, categories, categoryTree, reviewS
     <main>
       <Header menuOpen={menuOpen} searchOpen={searchOpen} query={query} count={count} setMenuOpen={setMenuOpen} setSearchOpen={setSearchOpen} setQuery={setQuery} setCategory={setCategory} openCart={() => setCartOpen(true)} site={site} categoryTree={categoryTree}/>
       <Hero heroIndex={heroIndex} setHeroIndex={setHeroIndex} slides={site.hero}/>
-      {site.sections.deals.enabled && <ProductGrid categories={categories} category={category} sort={sort} query={query} filtered={filtered} visibleProducts={visibleProducts} showAllProducts={showAllProducts} setCategory={setCategory} setSort={setSort} setShowAllProducts={setShowAllProducts} openProduct={openProduct} buyNow={buyNow} format={format} reviewSummaries={reviewSummaries} section={site.sections.deals}/>}
+      {flashProducts.length > 0 && <section className="flash-sale section"><h2>{flashSettings.flashSaleTitle || "Flash Sale"}</h2><p role="timer">Kết thúc sau {String(Math.floor(secondsLeft / 3600)).padStart(2, "0")}:{String(Math.floor(secondsLeft / 60) % 60).padStart(2, "0")}:{String(secondsLeft % 60).padStart(2, "0")}</p><div className="product-grid">{flashProducts.map((item) => <article className="product" key={item.id}><button type="button" className="card-wishlist" aria-label={wishlist.ids.includes(item.id) ? `Bỏ yêu thích ${item.name}` : `Yêu thích ${item.name}`} aria-pressed={wishlist.ids.includes(item.id)} onClick={() => void wishlist.toggle(item.id)}>{wishlist.ids.includes(item.id) ? "♥" : "♡"}</button><a href={`/san-pham/${item.slug}`}><img src={item.image} alt={item.name} loading="lazy"/><h3>{item.name}</h3></a><div className="price"><strong>{format(item.flashPrice!)}</strong><del>{format(item.price)}</del></div>{item.flashStock != null && <><progress max={(item.soldCount ?? 0) + item.flashStock || 1} value={item.soldCount ?? 0}/><small>Đã bán {item.soldCount ?? 0}</small></>}</article>)}</div></section>}
+      {site.sections.deals.enabled && <ProductGrid categories={categories} category={category} sort={sort} query={query} filtered={filtered} visibleProducts={visibleProducts} showAllProducts={showAllProducts} setCategory={setCategory} setSort={setSort} setShowAllProducts={setShowAllProducts} openProduct={openProduct} buyNow={buyNow} format={format} reviewSummaries={reviewSummaries} section={site.sections.deals} flashSettings={flashSettings}/>}
 
       {site.sections.feature.enabled && <section className="feature-banner">
         <div><p>THUYNGA SHOP · HÀNG NHẬP KHẨU</p><h2>{site.sections.feature.title.split("\n")[0]}<br/><em>{site.sections.feature.title.split("\n").slice(1).join(" ")}</em></h2><span>{site.sections.feature.subtitle}</span><a href="#new-arrivals">KHÁM PHÁ THÊM <ArrowUpRight size={16}/></a></div>
@@ -92,7 +104,7 @@ export default function Storefront({ products, categories, categoryTree, reviewS
         <div className="beauty-categories">{roots.map((root, index) => <a className="beauty-category" href={`/danh-muc/${root.slug}`} key={root.id}><img src={root.image || `/category-${index + 1}.svg`} alt={root.name} loading="lazy"/><span>{String(index + 1).padStart(2, "0")} / DANH MỤC</span><strong>{root.name}</strong><ArrowUpRight size={23}/></a>)}</div>
       </section>}
 
-      {site.departmentRails.filter((rail) => rail.enabled).map((rail) => { const root = roots.find((item) => item.slug === rail.categorySlug); if (!root) return null; const ids = categoryDescendants(root, categoryTree); const items = products.filter((item) => ids.includes(item.categoryId ?? -1)).slice(0, 8); return <section className="department-rail section" key={rail.categorySlug}><div className="section-heading"><div><span className="section-overline">SẢN PHẨM THEO NGÀNH</span><h2>{rail.title}</h2></div><a href={`/danh-muc/${root.slug}`}>Xem tất cả <ArrowUpRight size={15}/></a></div><div className="product-grid">{items.map((item) => <article className="product" key={item.id}><a className="image-open" href={`/san-pham/${item.slug}`}><div className="product-image"><img src={item.image} alt={item.name} loading="lazy"/></div></a><p className="product-brand">{item.brand}</p><h3><a className="product-link" href={`/san-pham/${item.slug}`}>{item.name}</a></h3><div className="price"><strong>{format(item.price)}</strong></div></article>)}</div></section>; })}
+      {site.departmentRails.filter((rail) => rail.enabled).map((rail) => { const root = roots.find((item) => item.slug === rail.categorySlug); if (!root) return null; const ids = categoryDescendants(root, categoryTree); const items = products.filter((item) => ids.includes(item.categoryId ?? -1)).slice(0, 8); return <section className="department-rail section" key={rail.categorySlug}><div className="section-heading"><div><span className="section-overline">SẢN PHẨM THEO NGÀNH</span><h2>{rail.title}</h2></div><a href={`/danh-muc/${root.slug}`}>Xem tất cả <ArrowUpRight size={15}/></a></div><div className="product-grid">{items.map((item) => <article className="product" key={item.id}><button type="button" className="card-wishlist" aria-label={wishlist.ids.includes(item.id) ? `Bỏ yêu thích ${item.name}` : `Yêu thích ${item.name}`} aria-pressed={wishlist.ids.includes(item.id)} onClick={() => void wishlist.toggle(item.id)}>{wishlist.ids.includes(item.id) ? "♥" : "♡"}</button><a className="image-open" href={`/san-pham/${item.slug}`}><div className="product-image"><img src={item.image} alt={item.name} loading="lazy"/></div></a><p className="product-brand">{item.brand}</p><h3><a className="product-link" href={`/san-pham/${item.slug}`}>{item.name}</a></h3><div className="price"><strong>{format(cardPrice(item))}</strong></div>{!!item.soldCount && <small>Đã bán {item.soldCount.toLocaleString("vi-VN")}</small>}</article>)}</div></section>; })}
 
       {site.sections.newProducts.enabled && <section className="new-products section" id="new-arrivals">
         <div className="section-heading">
@@ -101,9 +113,10 @@ export default function Storefront({ products, categories, categoryTree, reviewS
         </div>
         <div className="new-grid">
           {products.slice(16, 24).map((p, index) => <article className="new-card" key={p.id}>
+            <button type="button" className="card-wishlist" aria-label={wishlist.ids.includes(p.id) ? `Bỏ yêu thích ${p.name}` : `Yêu thích ${p.name}`} aria-pressed={wishlist.ids.includes(p.id)} onClick={() => void wishlist.toggle(p.id)}>{wishlist.ids.includes(p.id) ? "♥" : "♡"}</button>
             <div className="new-index">0{index + 1}</div>
             <a className="new-image-open" href={`/san-pham/${p.slug}`} aria-label={`Xem chi tiết ${p.name}`}><img src={p.image} alt={p.name} loading="lazy"/></a>
-            <div><p>{p.brand}</p><h3><a className="product-link" href={`/san-pham/${p.slug}`}>{p.name}</a></h3>{reviewSummaries[p.id] && <p className="product-rating">★ {reviewSummaries[p.id].average.toLocaleString("vi-VN")} ({reviewSummaries[p.id].count})</p>}<strong>{format(p.price)}</strong><button onClick={() => add(p.id)} aria-label={`Thêm ${p.name} vào túi`}><ShoppingBag size={16}/></button></div>
+            <div><p>{p.brand}</p><h3><a className="product-link" href={`/san-pham/${p.slug}`}>{p.name}</a></h3>{reviewSummaries[p.id] && <p className="product-rating">★ {reviewSummaries[p.id].average.toLocaleString("vi-VN")} ({reviewSummaries[p.id].count})</p>}<strong>{format(cardPrice(p))}</strong>{!!p.soldCount && <small>Đã bán {p.soldCount.toLocaleString("vi-VN")}</small>}<button onClick={() => add(p.id)} aria-label={`Thêm ${p.name} vào túi`}><ShoppingBag size={16}/></button></div>
           </article>)}
         </div>
       </section>}
@@ -115,8 +128,9 @@ export default function Storefront({ products, categories, categoryTree, reviewS
         </div>
         <div className="price-edit-grid">
           {products.filter((p) => p.price < 1000000).slice(0, 6).map((p) => <article className="price-edit-card" key={p.id}>
+            <button type="button" className="card-wishlist" aria-label={wishlist.ids.includes(p.id) ? `Bỏ yêu thích ${p.name}` : `Yêu thích ${p.name}`} aria-pressed={wishlist.ids.includes(p.id)} onClick={() => void wishlist.toggle(p.id)}>{wishlist.ids.includes(p.id) ? "♥" : "♡"}</button>
             <a className="price-edit-image" href={`/san-pham/${p.slug}`} aria-label={`Xem chi tiết ${p.name}`}><img src={p.image} alt={p.name} loading="lazy"/></a>
-            <div><small>{p.brand}</small><h3><a className="product-link" href={`/san-pham/${p.slug}`}>{p.name}</a></h3>{reviewSummaries[p.id] && <p className="product-rating">★ {reviewSummaries[p.id].average.toLocaleString("vi-VN")} ({reviewSummaries[p.id].count})</p>}<strong>{format(p.price)}</strong><button className="price-edit-buy" onClick={() => buyNow(p.id)}>MUA NGAY <ArrowUpRight size={13}/></button></div>
+            <div><small>{p.brand}</small><h3><a className="product-link" href={`/san-pham/${p.slug}`}>{p.name}</a></h3>{reviewSummaries[p.id] && <p className="product-rating">★ {reviewSummaries[p.id].average.toLocaleString("vi-VN")} ({reviewSummaries[p.id].count})</p>}<strong>{format(cardPrice(p))}</strong>{!!p.soldCount && <small>Đã bán {p.soldCount.toLocaleString("vi-VN")}</small>}<button className="price-edit-buy" onClick={() => buyNow(p.id)}>MUA NGAY <ArrowUpRight size={13}/></button></div>
           </article>)}
         </div>
       </section>}
@@ -138,7 +152,7 @@ export default function Storefront({ products, categories, categoryTree, reviewS
 
       <Footer site={site}/>
       <ProductDetailModal product={selectedProduct} quantity={detailQty} setQuantity={setDetailQty} close={() => setSelectedProduct(null)} add={add} buyNow={buyNow} categoryOf={categoryOf} format={format} policies={policies}/>
-      <CartDrawer open={cartOpen} count={count} products={products} cart={cart} subtotal={subtotal} close={() => setCartOpen(false)} update={update} checkout={() => location.assign("/thanh-toan")} format={format}/>
+      <CartDrawer open={cartOpen} count={count} products={products} cart={cart} subtotal={subtotal} close={() => setCartOpen(false)} update={update} checkout={() => location.assign("/thanh-toan")} format={format} flashSettings={flashSettings}/>
     </main>
   );
 }

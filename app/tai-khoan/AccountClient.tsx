@@ -3,13 +3,15 @@
 import { useState } from "react";
 import { signOut } from "next-auth/react";
 import { formatPrice } from "@/catalog/products";
+import { useWishlist } from "@/lib/wishlist";
 
 type Address = { id: number; recipientName: string; phone: string; address: string; district: string; city: string; isDefault: boolean };
 type Order = { id: number; code: string; total: number; status: string; createdAt: Date | string };
 type Item = { id: number; orderId: number; productId: number | null; productName: string; price: number; quantity: number };
 type Review = { id: number; orderId: number; productId: number; status: string };
 
-export default function AccountClient({ user, addresses: initialAddresses, orders, items, reviews: initialReviews }: { user: { id: string; name?: string | null; email?: string | null }; addresses: Address[]; orders: Order[]; items: Item[]; reviews: Review[] }) {
+export default function AccountClient({ user, addresses: initialAddresses, orders, items, reviews: initialReviews, products }: { user: { id: string; name?: string | null; email?: string | null }; addresses: Address[]; orders: Order[]; items: Item[]; reviews: Review[]; products: { id: number; name: string; slug: string; image: string }[] }) {
+  const wishlist = useWishlist();
   const [addresses, setAddresses] = useState(initialAddresses); const [reviews, setReviews] = useState(initialReviews); const [message, setMessage] = useState("");
   const addAddress = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault(); const form = new FormData(event.currentTarget);
@@ -26,6 +28,7 @@ export default function AccountClient({ user, addresses: initialAddresses, order
   };
   return <div className="account-page"><div className="page-heading"><p className="eyebrow">TÀI KHOẢN</p><h1>Xin chào, {user.name}</h1><p>{user.email}</p><button onClick={() => void signOut({ callbackUrl: "/" })}>Đăng xuất</button></div>
     {message && <p className="form-message">{message}</p>}
+    <section><h2>Sản phẩm yêu thích</h2><div className="address-grid">{products.filter((product) => wishlist.ids.includes(product.id)).map((product) => <article key={product.id}><a href={`/san-pham/${product.slug}`}><img src={product.image} alt={product.name} width={90}/><p>{product.name}</p></a><button onClick={() => void wishlist.toggle(product.id)}>Bỏ thích</button></article>)}</div>{!wishlist.ids.length && <p>Chưa có sản phẩm yêu thích.</p>}</section>
     <section><h2>Sổ địa chỉ</h2><div className="address-grid">{addresses.map((item) => <article key={item.id}><b>{item.recipientName}</b><p>{item.phone}</p><p>{item.address}, {item.district}, {item.city}</p><button onClick={() => void deleteAddress(item.id)}>Xóa</button></article>)}</div>
       <form className="simple-form" onSubmit={addAddress}><input name="recipientName" required placeholder="Người nhận"/><input name="phone" required pattern="0[0-9]{8,10}" placeholder="Số điện thoại"/><input name="address" required placeholder="Địa chỉ"/><input name="district" required placeholder="Quận / Huyện"/><input name="city" required placeholder="Tỉnh / Thành phố"/><label><input type="checkbox" name="isDefault" value="true"/> Địa chỉ mặc định</label><button>THÊM ĐỊA CHỈ</button></form>
     </section>

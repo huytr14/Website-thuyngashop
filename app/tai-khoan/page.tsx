@@ -2,7 +2,7 @@ import { asc, desc, eq, inArray } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { getCustomer } from "@/app/customer-session";
 import PublicPage from "@/components/PublicPage";
-import { openStoreDb } from "@/db/store";
+import { getStoreCatalog, openStoreDb } from "@/db/store";
 import { storeAddresses, storeOrderItems, storeOrders, storeReviews } from "@/db/store-schema";
 import AccountClient from "./AccountClient";
 
@@ -20,6 +20,6 @@ export default async function AccountPage() {
       db.select().from(storeOrderItems).where(inArray(storeOrderItems.orderId, orderIds)),
       db.select().from(storeReviews).where(eq(storeReviews.userId, user.id)),
     ]) : [[], []];
-    return <PublicPage><AccountClient user={user} addresses={addresses} orders={orders} items={items} reviews={reviews}/></PublicPage>;
+    return <PublicPage><AccountClient user={user} addresses={addresses} orders={orders} items={items} reviews={reviews} products={(await getStoreCatalog()).products.map(({ id, name, slug, image }) => ({ id, name, slug, image }))}/></PublicPage>;
   } finally { await close(); }
 }

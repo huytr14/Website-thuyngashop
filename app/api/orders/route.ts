@@ -1,4 +1,5 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { checkoutSchema } from "@/app/checkout-schema";
 import { checkoutRateLimited, requestClient } from "@/app/checkout-rate-limit";
@@ -7,6 +8,7 @@ import { defaultShopSettings, openStoreDb } from "@/db/store";
 import { storeOrderItems, storeOrders, storeProducts, storeShopSettings, storeVouchers } from "@/db/store-schema";
 import { orderCode, shippingFee, voucherDiscount, voucherError, type VoucherRule } from "@/lib/commerce";
 import { getCustomer } from "@/app/customer-session";
+import { canBuy, pricedLine } from "@/lib/product-pricing";
 
 const idempotencySchema = z.string().uuid();
 
@@ -25,10 +27,11 @@ export async function POST(request: Request) {
     let result: { order: typeof storeOrders.$inferSelect; shopEmail: string } | undefined;
     for (let attempt = 0; attempt < 5 && !result; attempt++) try {
       result = await db.transaction(async (tx) => {
-      const products = await tx.select({ id: storeProducts.id, name: storeProducts.name, price: storeProducts.price, inStock: storeProducts.inStock, published: storeProducts.published }).from(storeProducts).where(inArray(storeProducts.id, input.data.items.map(({ productId }) => productId)));
-      if (products.length !== input.data.items.length || products.some(({ inStock, published }) => !inStock || !published)) throw new OrderInputError("Có sản phẩm không tồn tại hoặc đã hết hàng");
-      const subtotal = input.data.items.reduce((sum, item) => sum + products.find(({ id }) => id === item.productId)!.price * item.quantity, 0);
+      const products = await tx.select().from(storeProducts).where(inArray(storeProducts.id, input.data.items.map(({ productId }) => productId)));
       const settings = (await tx.select().from(storeShopSettings).where(eq(storeShopSettings.id, 1)).limit(1))[0] ?? defaultShopSettings;
+      const lines = input.data.items.map((item) => ({ item, product: products.find(({ id }) => id === item.productId) }));
+      if (lines.some(({ item, product }) => !product?.published || !canBuy(product, item.variantName, item.quantity, input.data.items.filter((entry) => entry.productId === item.productId).reduce((sum, entry) => sum + entry.quantity, 0), settings))) throw new OrderInputError("Có sản phẩm hoặc biến thể không tồn tại, đã hết hàng");
+      const subtotal = lines.reduce((sum, { item, product }) => sum + pricedLine(product!, item.variantName, settings)!.price * item.quantity, 0);
       const shipping = shippingFee(subtotal, settings.freeShippingThreshold, settings.standardShippingFee);
       const voucher = input.data.voucherCode ? (await tx.select().from(storeVouchers).where(eq(storeVouchers.code, input.data.voucherCode)).for("update").limit(1))[0] : undefined;
       const error = input.data.voucherCode ? voucherError(voucher as VoucherRule | undefined, subtotal) : null;
@@ -47,7 +50,8 @@ export async function POST(request: Request) {
       }).returning();
       await tx.insert(storeOrderItems).values(input.data.items.map((item) => {
         const product = products.find(({ id }) => id === item.productId)!;
-        return { orderId: order.id, productId: product.id, productName: product.name, price: product.price, quantity: item.quantity };
+        const line = pricedLine(product, item.variantName, settings)!;
+        return { orderId: order.id, productId: product.id, productName: product.name, variantName: line.variantName, price: line.price, quantity: item.quantity };
       }));
       if (voucher) await tx.update(storeVouchers).set({ usedCount: sql`${storeVouchers.usedCount} + 1` }).where(eq(storeVouchers.id, voucher.id));
         return { order, shopEmail: settings.shopEmail };
@@ -56,6 +60,7 @@ export async function POST(request: Request) {
       if ((error as { constraint_name?: string }).constraint_name !== "orders_code_unique" || attempt === 4) throw error;
     }
     if (!result) throw new Error("Không thể tạo mã đơn hàng");
+    revalidatePath("/"); revalidatePath("/san-pham/[slug]", "page");
 
     try {
       await sendOrderEmails({ code: result.order.code, customerName: result.order.customerName, customerEmail: result.order.email, total: result.order.total, shopEmail: result.shopEmail });

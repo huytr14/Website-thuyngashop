@@ -88,9 +88,14 @@ test("voucher áp vào đơn COD, khách hiện trong admin và shop trả lời
     await expect(page.getByText(code, { exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.goto("/");
-    await page.locator(".product-detail-link").first().click();
+    await page.goto("/san-pham/kirkland-fish-oil-1000-mg");
+    await expect(page.locator(".pdp-vouchers")).toContainText(code);
+    await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+    await page.locator(".pdp-vouchers > div").filter({ hasText: code }).getByRole("button", { name: "Sao chép" }).click();
+    await expect(page.getByText(`Đã sao chép mã ${code}`)).toBeVisible();
+    await page.getByRole("button", { name: "200 viên" }).click();
     await page.getByRole("button", { name: "THÊM VÀO TÚI" }).click();
-    await page.getByRole("button", { name: /^THANH TOÁN/ }).click();
+    await page.goto("/thanh-toan");
     await page.getByPlaceholder("Mã giảm giá").fill(code);
     await page.getByRole("button", { name: "ÁP DỤNG" }).click();
     await expect(page.getByText(`Đã áp dụng mã ${code}`)).toBeVisible();

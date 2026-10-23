@@ -9,7 +9,7 @@ const testimonial = z.object({ id: z.string().uuid(), name: text, content: z.str
 
 export const siteContentSchema = z.object({
   brand: z.object({ name: text.min(1), logo: image, footerLogo: image, favicon: image }),
-  announcement: z.object({ enabled: z.boolean(), kicker: text, text, linkText: text, link }),
+  announcement: z.object({ enabled: z.boolean(), kicker: text, text, promo: text, linkText: text, link }),
   hero: z.array(slide).max(20),
   departmentRails: z.array(z.object({ categorySlug: z.string().trim().max(100), title: text, enabled: z.boolean() })).max(4),
   home: z.object({ featureImage: image, categoryImages: z.array(image).length(3), journal: z.array(z.object({ image, label: text, title: text, linkText: text })).length(3), benefits: z.array(z.object({ title: text, description: text })).length(4), brandTags: z.array(text).length(5) }),
@@ -22,7 +22,7 @@ export const siteContentSchema = z.object({
 export type SiteContent = z.infer<typeof siteContentSchema>;
 export const defaultSiteContent: SiteContent = {
   brand: { name: "THUYNGA Shop", logo: "/thuynga-logo-wine.png", footerLogo: "", favicon: "" },
-  announcement: { enabled: true, kicker: "HÀNG NHẬP KHẨU CHÍNH HÃNG", text: "Thực phẩm chức năng, thực phẩm, trái cây & mỹ phẩm từ Mỹ · Nhật · Hàn · Úc", linkText: "KHÁM PHÁ NGAY", link: "#deals" },
+  announcement: { enabled: true, kicker: "HÀNG NHẬP KHẨU CHÍNH HÃNG", text: "Thực phẩm chức năng, thực phẩm, trái cây & mỹ phẩm từ Mỹ · Nhật · Hàn · Úc", promo: "", linkText: "KHÁM PHÁ NGAY", link: "#deals" },
   hero: [
     { id: "00000000-0000-4000-8000-000000000001", image: "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=1200&q=85", title: "HÀNG MỸ", accent: "CHỌN LỌC", description: "Thực phẩm chức năng và hàng nhập khẩu chính hãng cho nhu cầu mỗi ngày. Ảnh minh họa.", buttonText: "KHÁM PHÁ SẢN PHẨM", buttonLink: "/danh-muc/thuc-pham-chuc-nang", imageLabel: "THỰC PHẨM CHỨC NĂNG · ẢNH MẪU", enabled: true },
     { id: "00000000-0000-4000-8000-000000000002", image: "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?auto=format&fit=crop&w=1200&q=85", title: "HƯƠNG VỊ", accent: "BỐN PHƯƠNG", description: "Khám phá trái cây và thực phẩm nhập khẩu từ Mỹ, Nhật, Hàn, Úc. Ảnh minh họa.", buttonText: "KHÁM PHÁ SẢN PHẨM", buttonLink: "/danh-muc/thuc-pham-do-uong", imageLabel: "THỰC PHẨM & TRÁI CÂY · ẢNH MẪU", enabled: true },

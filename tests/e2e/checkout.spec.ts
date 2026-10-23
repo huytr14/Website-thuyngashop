@@ -13,7 +13,7 @@ test("xem sản phẩm, thêm giỏ, đặt COD và thấy đơn trong admin", a
   const email = `e2e-${Date.now()}@example.com`;
   testEmails.add(email);
   await page.goto("/");
-  await page.locator(".product-detail-link").first().click();
+  await page.locator(".product").filter({ hasText: "Kewpie" }).getByRole("button", { name: /Xem nhanh/ }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.getByRole("button", { name: "THÊM VÀO TÚI" }).click();
   await page.getByRole("button", { name: /^THANH TOÁN/ }).click();
@@ -55,6 +55,7 @@ test("mở trang sản phẩm từ trang chủ và đặt COD", async ({ page })
   await page.locator(".product-grid .product-link").first().click();
   await expect(page).toHaveURL(/\/san-pham\/[a-z0-9-]+$/);
   await expect(page.getByRole("heading", { name: "Thông số sản phẩm" })).toBeVisible();
+  if (await page.locator(".product-variant button").count()) await page.locator(".product-variant button").first().click();
   await page.getByRole("button", { name: "MUA NGAY" }).click();
   await expect(page).toHaveURL(/\/thanh-toan$/);
   await expect(page.getByRole("radio", { name: /COD/ })).toBeChecked();
@@ -101,6 +102,7 @@ test("header trang chi tiết giữ tìm kiếm, giỏ hàng và ẩn sao khi ch
   await expect(page.getByRole("button", { name: "Mở túi hàng, 0 sản phẩm" })).toBeVisible();
   await expect(page.locator(".product-buy-panel .product-rating")).toHaveCount(0);
   await expect(page.getByText("Chưa có đánh giá được duyệt.")).toBeVisible();
+  if (await page.locator(".product-variant button").count()) await page.locator(".product-variant button").first().click();
   await page.getByRole("button", { name: "THÊM VÀO TÚI" }).click();
   await expect(page.getByRole("button", { name: "Mở túi hàng, 1 sản phẩm" })).toBeVisible();
   await page.locator(".drawer-head button").click();

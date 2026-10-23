@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getApprovedProductReviews, getApprovedReviewSummaries, getSiteContent, getStoreCatalog } from "@/db/store";
+import { getApprovedProductReviews, getApprovedReviewSummaries, getShopSettings, getSiteContent, getStoreCatalog, openStoreDb } from "@/db/store";
+import { storeVouchers } from "@/db/store-schema";
 import ProductPageClient from "./ProductPageClient";
 import { pageMetadata } from "@/lib/site-metadata";
 
-export const revalidate = 300;
+export const revalidate = 5;
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -19,8 +20,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const catalog = await getStoreCatalog();
   const product = catalog.products.find((item) => item.slug === slug);
   if (!product) notFound();
-  const [reviews, summaries, site] = await Promise.all([getApprovedProductReviews(product.id), getApprovedReviewSummaries(), getSiteContent()]);
+  const [reviews, summaries, site, settings] = await Promise.all([getApprovedProductReviews(product.id), getApprovedReviewSummaries(), getSiteContent(), getShopSettings()]);
+  let vouchers: { code: string; type: string; value: number; minOrder: number; expiresAt: Date | null }[] = [];
+  if (process.env.DATABASE_URL) { const { db, close } = openStoreDb(); try { const now = new Date(); vouchers = (await db.select().from(storeVouchers)).filter((item) => item.active && (!item.startsAt || item.startsAt <= now) && (!item.expiresAt || item.expiresAt > now) && (!item.usageLimit || item.usedCount < item.usageLimit)); } finally { await close(); } }
   const related = catalog.products.filter((item) => item.category === product.category && item.id !== product.id).slice(0, 4);
   const jsonLd = { "@context": "https://schema.org", "@type": "Product", name: product.name, image: product.image, brand: product.brand ? { "@type": "Brand", name: product.brand } : undefined, offers: { "@type": "Offer", priceCurrency: "VND", price: product.price, availability: product.inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock" } };
-  return <><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}/><ProductPageClient product={product} products={catalog.products} categoryTree={catalog.categoryTree} related={related} reviews={reviews} summaries={summaries} site={site}/></>;
+  return <><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}/><ProductPageClient product={product} products={catalog.products} categoryTree={catalog.categoryTree} related={related} reviews={reviews} summaries={summaries} site={site} settings={settings} vouchers={vouchers}/></>;
 }

@@ -3,7 +3,8 @@ import { z } from "zod";
 export const cartItemsSchema = z.array(z.object({
   productId: z.coerce.number().int().positive(),
   quantity: z.coerce.number().int().min(1).max(99),
-})).min(1).max(50).refine((items) => new Set(items.map(({ productId }) => productId)).size === items.length, "Giỏ hàng có sản phẩm trùng lặp");
+  variantName: z.string().trim().max(300).optional(),
+})).min(1).max(50).refine((items) => new Set(items.map(({ productId, variantName }) => `${productId}|${variantName ?? ""}`)).size === items.length, "Giỏ hàng có sản phẩm trùng lặp");
 
 export const checkoutSchema = z.object({
   customerName: z.string().trim().min(2).max(150),

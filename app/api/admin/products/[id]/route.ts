@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { hasAdminSession } from "@/app/admin-auth";
 import { productInputSchema } from "@/app/admin-products";
@@ -16,6 +17,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   try {
     const updated = await saveProduct(product.data, id.data);
     if (!updated) return Response.json({ error: "Không tìm thấy sản phẩm" }, { status: 404 });
+    revalidatePath("/"); revalidatePath("/san-pham/[slug]", "page"); revalidatePath("/danh-muc/[slug]", "page");
     return Response.json({ product: updated });
   } catch (error) {
     if ((error as { code?: string }).code === "23505") return Response.json({ error: "Slug sản phẩm đã tồn tại" }, { status: 409 });
@@ -32,6 +34,7 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
   try {
     const [deleted] = await db.delete(storeProducts).where(eq(storeProducts.id, id.data)).returning({ id: storeProducts.id });
     if (!deleted) return Response.json({ error: "Không tìm thấy sản phẩm" }, { status: 404 });
+    revalidatePath("/"); revalidatePath("/san-pham/[slug]", "page"); revalidatePath("/danh-muc/[slug]", "page");
     return Response.json({ ok: true });
   } catch (error) {
     if ((error as { code?: string }).code === "23503") return Response.json({ error: "Sản phẩm đã được dùng trong đơn hàng" }, { status: 409 });

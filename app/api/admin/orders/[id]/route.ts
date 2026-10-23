@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { hasAdminSession } from "@/app/admin-auth";
 import { openStoreDb } from "@/db/store";
@@ -32,6 +33,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (!current) return Response.json({ error: "Không tìm thấy đơn hàng" }, { status: 404 });
     if (!canChangeOrderStatus(current.status as OrderStatus, input.data.status)) return Response.json({ error: "Không thể chuyển sang trạng thái này" }, { status: 409 });
     const [order] = await db.update(storeOrders).set({ status: input.data.status }).where(eq(storeOrders.id, id.data)).returning();
+    revalidatePath("/"); revalidatePath("/san-pham/[slug]", "page");
     return Response.json({ order });
   } finally { await close(); }
 }

@@ -23,6 +23,7 @@ test("admin mobile: tải ảnh local, lưu nháp chỉ tên, nhân bản và đ
     const image = await page.request.get(media.url); expect(image.ok()).toBe(true); expect(image.headers()["content-type"]).toBe("image/png");
     expect((await page.request.get("/media-file/%2e%2e%2f.env.local")).status()).not.toBe(200);
     await page.goto("/admin");
+    await page.getByRole("button", { name: /Sản phẩm \d+/ }).click();
     await page.getByRole("button", { name: /THÊM SẢN PHẨM/ }).click();
     await page.getByLabel("Tên sản phẩm").fill(name);
     await page.getByRole("button", { name: "Lưu", exact: true }).click();
@@ -42,8 +43,8 @@ test("admin mobile: tải ảnh local, lưu nháp chỉ tên, nhân bản và đ
     await picker.getByRole("button", { name: new RegExp(`${slug}-hai\\.png`) }).click();
     await picker.getByRole("button", { name: /Xong/ }).click();
     await page.getByRole("button", { name: "Đưa ảnh xuống" }).first().click();
-    await page.getByLabel("Giá bán").fill("2.780.000");
-    await expect(page.getByLabel("Giá bán")).toHaveValue("2.780.000");
+    await page.getByLabel("Giá bán", { exact: true }).fill("2.780.000");
+    await expect(page.getByLabel("Giá bán", { exact: true })).toHaveValue("2.780.000");
     await page.getByLabel("Danh mục").selectOption({ label: "Thực phẩm chức năng" });
     await page.getByLabel("Trạng thái").selectOption("published");
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
