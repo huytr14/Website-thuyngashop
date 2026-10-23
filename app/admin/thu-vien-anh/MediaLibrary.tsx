@@ -1,0 +1,13 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import type { Media } from "@/components/admin/MediaPicker";
+
+export default function MediaLibrary() {
+  const [items, setItems] = useState<Media[]>([]); const [query, setQuery] = useState(""); const [message, setMessage] = useState(""); const [busy, setBusy] = useState(false);
+  const load = async () => { const response = await fetch("/api/admin/media"); if (response.ok) setItems((await response.json()).media); };
+  useEffect(() => { void load(); }, []);
+  const upload = async (files: FileList | File[]) => { if (!files.length) return; setBusy(true); const form = new FormData(); for (const file of files) form.append("files", file); const response = await fetch("/api/admin/media/upload", { method: "POST", body: form }); const data = await response.json(); await load(); setMessage((data.errors ?? []).join("\n") || (!response.ok ? data.error : "Ảnh đã được tải lên")); setBusy(false); };
+  const remove = async (item: Media) => { if (!confirm(`Xóa vĩnh viễn ảnh “${item.alt || item.url}”?`)) return; const response = await fetch(`/api/admin/media/${item.id}`, { method: "DELETE" }); const data = await response.json(); if (!response.ok) return setMessage([data.error, ...(data.usage ?? [])].join("\n")); await load(); setMessage("Đã xóa ảnh"); };
+  return <section className="media-library"><div className="media-dropzone" onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); void upload(Array.from(event.dataTransfer.files)); }}><p>Kéo ảnh vào đây hoặc chọn từ thiết bị</p><input aria-label="Chọn ảnh tải lên" type="file" accept="image/jpeg,image/png,image/webp,image/avif" multiple onChange={(event) => { if (event.target.files) void upload(event.target.files); }}/></div><input aria-label="Tìm ảnh" placeholder="Tìm theo tên hoặc alt" value={query} onChange={(event) => setQuery(event.target.value)}/>{busy && <p>Đang tải ảnh...</p>}{message && <p role="status" style={{ whiteSpace: "pre-wrap" }}>{message}</p>}<div className="media-library-grid">{items.filter((item) => `${item.alt} ${item.url}`.toLocaleLowerCase("vi-VN").includes(query.toLocaleLowerCase("vi-VN"))).map((item) => <article key={item.id}><img src={item.url} alt={item.alt}/><input aria-label={`Alt của ảnh ${item.id}`} defaultValue={item.alt} onBlur={async (event) => { const alt = event.target.value; await fetch(`/api/admin/media/${item.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ alt }) }); }}/><small>{item.storageKey ? "Ảnh local" : "Ảnh ngoài"} · {(item.sizeBytes / 1024).toFixed(0)} KB</small><button type="button" onClick={() => void remove(item)}>Xóa vĩnh viễn</button></article>)}</div></section>;
+}

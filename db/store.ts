@@ -1,9 +1,10 @@
 import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { Pool } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-serverless";
+import { sanitizeRichText } from "@/lib/sanitize-rich-text";
 import type { Product } from "@/catalog/products";
 import { categories as fallbackCategories, products as fallbackProducts } from "@/catalog/products";
-import { storeCategories, storeProducts, storeReviews, storeShopSettings, storeUsers } from "./store-schema";
+import { storeCategories, storeMedia, storeProductMedia, storeProducts, storeReviews, storeShopSettings, storeUsers } from "./store-schema";
 
 export type ReviewSummary = { count: number; average: number };
 export type ProductReview = { id: number; rating: number; title: string; content: string; customerName: string | null };
@@ -33,7 +34,7 @@ export async function getStoreCatalog(): Promise<{ products: Product[]; categori
   const { db, close } = openStoreDb();
 
   try {
-    const [productRows, categoryRows] = await Promise.all([
+    const [productRows, categoryRows, mediaRows] = await Promise.all([
       db.select({
         id: storeProducts.id,
         name: storeProducts.name,
@@ -47,14 +48,17 @@ export async function getStoreCatalog(): Promise<{ products: Product[]; categori
         description: storeProducts.description,
         variant: storeProducts.variant,
         inStock: storeProducts.inStock,
+        seoTitle: storeProducts.seoTitle,
+        seoDescription: storeProducts.seoDescription,
         badge: storeProducts.badge,
         category: storeCategories.name,
-      }).from(storeProducts).innerJoin(storeCategories, eq(storeProducts.categoryId, storeCategories.id)).orderBy(asc(storeProducts.id)),
+      }).from(storeProducts).innerJoin(storeCategories, eq(storeProducts.categoryId, storeCategories.id)).where(eq(storeProducts.published, true)).orderBy(asc(storeProducts.id)),
       db.select({ name: storeCategories.name }).from(storeCategories).orderBy(asc(storeCategories.id)),
+      db.select({ productId: storeProductMedia.productId, url: storeMedia.url, sortOrder: storeProductMedia.sortOrder }).from(storeProductMedia).innerJoin(storeMedia, eq(storeProductMedia.mediaId, storeMedia.id)).orderBy(asc(storeProductMedia.sortOrder)),
     ]);
 
     return {
-      products: productRows.map((product) => ({ ...product, badge: product.badge ?? undefined })),
+      products: productRows.map((product) => { const images = mediaRows.filter((item) => item.productId === product.id).map((item) => item.url); return { ...product, description: sanitizeRichText(product.description), image: images[0] ?? product.image, extraImages: images.length ? images.slice(1) : product.extraImages, badge: product.badge ?? undefined }; }),
       categories: ["Tất cả", ...categoryRows.map(({ name }) => name)],
     };
   } finally {

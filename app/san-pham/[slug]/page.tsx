@@ -8,7 +8,7 @@ export const revalidate = 300;
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const product = (await getStoreCatalog()).products.find((item) => item.slug === slug);
-  return product ? { title: `${product.name} | THUYNGA Shop`, description: product.shortDescription || product.name, openGraph: { title: product.name, description: product.shortDescription || product.name, images: [product.image] } } : {};
+  return product ? { title: product.seoTitle || `${product.name} | THUYNGA Shop`, description: product.seoDescription || product.shortDescription || product.name, openGraph: { title: product.seoTitle || product.name, description: product.seoDescription || product.shortDescription || product.name, images: [product.image] } } : {};
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {

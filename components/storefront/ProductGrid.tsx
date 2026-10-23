@@ -41,7 +41,7 @@ export default function ProductGrid({ categories, category, sort, query, filtere
           <p className="product-brand">{p.brand}</p>
           <h3><a className="product-link" href={`/san-pham/${p.slug}`}>{p.name}</a></h3>
           {reviewSummaries[p.id] && <p className="product-rating" aria-label={`${reviewSummaries[p.id].average} trên 5 sao, ${reviewSummaries[p.id].count} lượt đánh giá`}>★ {reviewSummaries[p.id].average.toLocaleString("vi-VN")} <span>({reviewSummaries[p.id].count})</span></p>}
-          <div className="price"><strong>{format(p.price)}</strong><del>{format(p.oldPrice)}</del></div>
+          <div className="price"><strong>{format(p.price)}</strong>{p.oldPrice > p.price && <del>{format(p.oldPrice)}</del>}</div>
           <button className="product-detail-link" onClick={() => openProduct(p)}>Xem nhanh <ArrowUpRight size={13}/></button>
         </article>
       ))}

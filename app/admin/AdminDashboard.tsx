@@ -1,14 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import ProductEditor, { type EditorProduct } from "@/components/admin/ProductEditor";
+import MediaPicker from "@/components/admin/MediaPicker";
+import "./editor.css";
 import styles from "./admin.module.css";
 
 type Category = { id: number; name: string; slug: string };
-type Product = {
-  id: number; name: string; slug: string; brand: string; price: number; oldPrice: number;
-  image: string; extraImages: string[]; shortDescription: string; description: string;
-  variant: string; inStock: boolean; badge: string | null; categoryId: number; categoryName: string;
-};
+type Product = EditorProduct & { categoryName: string | null };
 type OrderStatus = "MOI" | "DA_XAC_NHAN" | "DANG_GIAO" | "HOAN_THANH" | "HUY";
 type Order = { id: number; code: string; customerName: string; email: string; phone: string; address: string; city: string; district: string; note: string | null; subtotal: number; shippingFee: number; discount: number; total: number; voucherCode: string | null; paymentMethod: string; status: OrderStatus; createdAt: string };
 type OrderItem = { id: number; productName: string; price: number; quantity: number };
@@ -35,6 +34,7 @@ export default function AdminDashboard() {
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [csvErrors, setCsvErrors] = useState<string[]>([]);
+  const [qrMedia, setQrMedia] = useState<number[]>([]);
 
   const load = async () => {
     setLoading(true);
@@ -54,26 +54,11 @@ export default function AdminDashboard() {
   const filteredOrders = orders.filter(({ status }) => orderStatus === "ALL" || status === orderStatus);
   const flash = (message: string) => { setNotice(message); setTimeout(() => setNotice(""), 2500); };
 
-  const saveProduct = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError("");
-    const form = new FormData(event.currentTarget);
-    const payload = {
-      name: form.get("name"), slug: form.get("slug"), brand: form.get("brand"),
-      price: form.get("price"), oldPrice: form.get("oldPrice"), image: form.get("image"),
-      extraImages: String(form.get("extraImages") ?? "").split(/\r?\n/).map((value) => value.trim()).filter(Boolean),
-      shortDescription: form.get("shortDescription"), description: form.get("description"),
-      variant: form.get("variant"), inStock: form.get("inStock") === "on",
-      badge: String(form.get("badge") ?? "").trim() || null, categoryId: form.get("categoryId"),
-    };
-    const response = await fetch(editing ? `/api/admin/products/${editing.id}` : "/api/admin/products", {
-      method: editing ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
-    });
+  const duplicateProduct = async (product: Product) => {
+    const response = await fetch(`/api/admin/products/${product.id}/duplicate`, { method: "POST" });
     const data = await response.json();
-    if (!response.ok) return setError(data.error ?? "Không thể lưu sản phẩm");
-    await load();
-    setEditing(undefined);
-    flash(editing ? "Đã cập nhật sản phẩm" : "Đã thêm sản phẩm");
+    if (!response.ok) return flash(data.error ?? "Không thể nhân bản");
+    await load(); setEditing({ ...data.product, categoryName: product.categoryName, mediaIds: product.mediaIds }); flash("Đã tạo bản nháp nhân bản");
   };
 
   const deleteProduct = async (product: Product) => {
@@ -116,6 +101,7 @@ export default function AdminDashboard() {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const payload = Object.fromEntries(form.entries());
+    if (qrMedia.length) { const response = await fetch("/api/admin/media"); const data = await response.json(); payload.vietQrUrl = data.media.find((item: { id: number }) => item.id === qrMedia[0])?.url ?? payload.vietQrUrl; }
     const response = await fetch("/api/admin/settings", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
     const data = await response.json();
     if (!response.ok) return flash(data.error ?? "Không thể lưu cấu hình");
@@ -131,7 +117,7 @@ export default function AdminDashboard() {
         <button className={view === "products" ? styles.activeNav : ""} onClick={() => setView("products")}>Sản phẩm {!loading && <small>{products.length}</small>}</button>
         <button className={view === "orders" ? styles.activeNav : ""} onClick={() => setView("orders")}>Đơn hàng <small>{orders.length}</small></button>
         <button className={view === "settings" ? styles.activeNav : ""} onClick={() => setView("settings")}>Cấu hình</button>
-        <a href="/admin/tin-tuc">Tin tức</a><a href="/admin/danh-gia">Đánh giá</a>
+        <a href="/admin/tin-tuc">Tin tức</a><a href="/admin/thu-vien-anh">Thư viện ảnh</a><a href="/admin/danh-gia">Đánh giá</a>
       </nav>
       <div className={styles.sideBottom}><a href="/">← Xem cửa hàng</a><form action="/api/admin/logout" method="post"><button>Đăng xuất</button></form></div>
     </aside>
@@ -152,9 +138,9 @@ export default function AdminDashboard() {
           <div className={styles.tableHeader}><span>SẢN PHẨM</span><span>DANH MỤC</span><span>GIÁ</span><span>TỒN KHO</span><span>THAO TÁC</span></div>
           {filtered.map((product) => <div className={styles.productRow} key={product.id}>
             <span><img src={product.image} alt=""/><i><b>{product.name}</b><small>{product.brand} · /{product.slug}</small></i></span>
-            <span>{product.categoryName}</span><span><b>{money(product.price)}</b><del>{money(product.oldPrice)}</del></span>
+            <span>{product.categoryName ?? "Chưa chọn"}<small>{product.published ? "Đang bán" : "Bản nháp"}</small></span><span><b>{money(product.price)}</b>{product.oldPrice > product.price && <del>{money(product.oldPrice)}</del>}</span>
             <span className={product.inStock ? styles.inStock : styles.outOfStock}>{product.inStock ? "Còn hàng" : "Hết hàng"}</span>
-            <span><button onClick={() => { setError(""); setEditing(product); }}>Sửa</button><button onClick={() => void deleteProduct(product)}>Xóa</button></span>
+            <span><button onClick={() => { setError(""); setEditing(product); }}>Sửa</button><button onClick={() => void duplicateProduct(product)}>Nhân bản</button><button onClick={() => void deleteProduct(product)}>Xóa</button></span>
           </div>)}
           {!filtered.length && <div className={styles.empty}>Không tìm thấy sản phẩm.</div>}
         </div>}
@@ -175,7 +161,7 @@ export default function AdminDashboard() {
         <label>NGÂN HÀNG<input name="bankName" maxLength={150} defaultValue={settings.bankName}/></label>
         <label>CHỦ TÀI KHOẢN<input name="bankAccountName" maxLength={150} defaultValue={settings.bankAccountName}/></label>
         <label>SỐ TÀI KHOẢN<input name="bankAccountNumber" maxLength={50} defaultValue={settings.bankAccountNumber}/></label>
-        <label>LINK ẢNH VIETQR<input name="vietQrUrl" type="url" maxLength={2000} defaultValue={settings.vietQrUrl}/></label>
+        <label>ẢNH VIETQR <MediaPicker selected={qrMedia} onChange={setQrMedia} multiple={false}/><input name="vietQrUrl" type="url" maxLength={2000} defaultValue={settings.vietQrUrl} placeholder="URL cũ (dự phòng)"/></label>
         <label className={styles.full}>EMAIL NHẬN THÔNG BÁO ĐƠN<input name="shopEmail" type="email" maxLength={255} defaultValue={settings.shopEmail}/></label>
         <label className={styles.full}>NỘI DUNG GIỚI THIỆU<textarea name="aboutContent" required rows={7} defaultValue={settings.aboutContent}/></label>
         <label className={styles.full}>NỘI DUNG LIÊN HỆ<textarea name="contactContent" required rows={5} defaultValue={settings.contactContent}/></label>
@@ -187,26 +173,8 @@ export default function AdminDashboard() {
       </form><div className={styles.messages}><h2>Lời nhắn liên hệ</h2>{messages.map((item) => <article key={item.id}><b>{item.name}</b><small>{item.email}{item.phone ? ` · ${item.phone}` : ""} · {new Date(item.createdAt).toLocaleString("vi-VN")}</small><p>{item.message}</p></article>)}{!messages.length && <p>Chưa có lời nhắn.</p>}</div></section>}
     </main>
 
-    {editing !== undefined && <div className={styles.modalBack} onMouseDown={() => setEditing(undefined)}><form key={editing?.id ?? "new"} className={styles.modal} onSubmit={saveProduct} onMouseDown={(event) => event.stopPropagation()}>
-      <div className={styles.modalHead}><div><p>{editing ? "CHỈNH SỬA" : "SẢN PHẨM MỚI"}</p><h2>{editing?.name ?? "Thêm sản phẩm"}</h2></div><button type="button" onClick={() => setEditing(undefined)}>×</button></div>
-      {error && <div className={styles.formError}>{error}</div>}
-      <div className={styles.formGrid}>
-        <label className={styles.full}>TÊN SẢN PHẨM<input required name="name" defaultValue={editing?.name}/></label>
-        <label>SLUG<input required name="slug" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" defaultValue={editing?.slug}/></label>
-        <label>THƯƠNG HIỆU<input required name="brand" defaultValue={editing?.brand}/></label>
-        <label>DANH MỤC<select required name="categoryId" defaultValue={editing?.categoryId ?? ""}><option value="" disabled>Chọn danh mục</option>{categories.map((category) => <option value={category.id} key={category.id}>{category.name}</option>)}</select></label>
-        <label>NHÃN<input name="badge" defaultValue={editing?.badge ?? ""} placeholder="MỚI, NỔI BẬT..."/></label>
-        <label>GIÁ BÁN<input required min="0" type="number" name="price" defaultValue={editing?.price}/></label>
-        <label>GIÁ GỐC<input required min="0" type="number" name="oldPrice" defaultValue={editing?.oldPrice}/></label>
-        <label className={styles.full}>ẢNH CHÍNH<input required name="image" defaultValue={editing?.image} placeholder="https://... hoặc /anh.jpg"/></label>
-        <label className={styles.full}>ẢNH PHỤ<textarea name="extraImages" defaultValue={editing?.extraImages.join("\n")} placeholder="Mỗi đường dẫn một dòng"/></label>
-        <label className={styles.full}>MÔ TẢ NGẮN<textarea name="shortDescription" maxLength={500} defaultValue={editing?.shortDescription}/></label>
-        <label className={styles.full}>MÔ TẢ CHI TIẾT<textarea name="description" rows={5} defaultValue={editing?.description}/></label>
-        <label className={styles.full}>BIẾN THỂ<input name="variant" defaultValue={editing?.variant} placeholder="Dung tích, màu sắc..."/></label>
-        <label className={styles.check}><input type="checkbox" name="inStock" defaultChecked={editing?.inStock ?? true}/> Còn hàng</label>
-      </div>
-      <button className={styles.primary} type="submit">{editing ? "LƯU THAY ĐỔI" : "TẠO SẢN PHẨM"}</button>
-    </form></div>}
+    {editing !== undefined && <ProductEditor key={editing?.id ?? "new"} product={editing} categories={categories} badges={[...new Set(products.map((item) => item.badge).filter((item): item is string => !!item))]} onClose={() => setEditing(undefined)} onSaved={() => { void load(); setEditing(undefined); flash("Đã lưu sản phẩm"); }}/>
+    }
 
     {orderDetail && <div className={styles.modalBack} onMouseDown={() => setOrderDetail(null)}><section className={styles.modal} onMouseDown={(event) => event.stopPropagation()}>
       <div className={styles.modalHead}><div><p>CHI TIẾT ĐƠN HÀNG</p><h2>{orderDetail.order.code}</h2></div><button type="button" onClick={() => setOrderDetail(null)}>×</button></div>

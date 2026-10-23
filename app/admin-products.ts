@@ -1,22 +1,37 @@
 import { z } from "zod";
+import { sanitizeRichText } from "../lib/sanitize-rich-text.ts";
 
 const image = z.string().trim().refine((value) => !value || value.startsWith("/") || /^https?:\/\//i.test(value), "Ảnh phải là URL http(s) hoặc đường dẫn bắt đầu bằng /");
 
 export const productInputSchema = z.object({
   name: z.string().trim().min(1, "Tên sản phẩm là bắt buộc").max(200),
-  slug: z.string().trim().min(1).max(200).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug chỉ gồm chữ thường, số và dấu gạch ngang"),
-  brand: z.string().trim().min(1, "Thương hiệu là bắt buộc").max(100),
+  slug: z.string().trim().max(200).regex(/^(?:[a-z0-9]+(?:-[a-z0-9]+)*)?$/, "Slug chỉ gồm chữ thường, số và dấu gạch ngang"),
+  slugCustom: z.boolean().default(false),
+  brand: z.string().trim().max(100),
   price: z.coerce.number().int().nonnegative("Giá bán không hợp lệ"),
   oldPrice: z.coerce.number().int().nonnegative("Giá gốc không hợp lệ"),
   image,
   extraImages: z.array(image).max(20),
   shortDescription: z.string().trim().max(500),
-  description: z.string().trim().max(10000),
+  description: z.string().trim().max(10000).transform(sanitizeRichText),
   variant: z.string().trim().max(500),
   inStock: z.boolean(),
   badge: z.string().trim().max(50).nullable(),
-  categoryId: z.coerce.number().int().positive("Danh mục không hợp lệ"),
-}).refine(({ oldPrice, price }) => oldPrice >= price, { message: "Giá gốc phải lớn hơn hoặc bằng giá bán", path: ["oldPrice"] });
+  categoryId: z.union([z.coerce.number().int().positive(), z.null()]),
+  published: z.boolean().default(false),
+  trackInventory: z.boolean().default(false),
+  inventoryQuantity: z.coerce.number().int().nonnegative().default(0),
+  variantOptions: z.array(z.object({ name: z.string().trim().min(1), values: z.array(z.string().trim().min(1)) })).default([]),
+  variantRows: z.array(z.object({ name: z.string(), price: z.coerce.number().int().nonnegative(), quantity: z.coerce.number().int().nonnegative() })).default([]),
+  seoTitle: z.string().trim().max(200).default(""),
+  seoDescription: z.string().trim().max(500).default(""),
+  mediaIds: z.array(z.number().int().positive()).max(21).default([]),
+}).superRefine((value, context) => {
+  if (value.oldPrice && value.oldPrice < value.price) context.addIssue({ code: "custom", path: ["oldPrice"], message: "Giá gốc phải lớn hơn hoặc bằng giá bán" });
+  if (value.published && !value.price) context.addIssue({ code: "custom", path: ["price"], message: "Đang bán cần giá bán > 0" });
+  if (value.published && !(value.image || value.mediaIds.length)) context.addIssue({ code: "custom", path: ["image"], message: "Đang bán cần ít nhất 1 ảnh" });
+  if (value.published && !value.categoryId) context.addIssue({ code: "custom", path: ["categoryId"], message: "Đang bán cần danh mục" });
+});
 
 export type ProductInput = z.infer<typeof productInputSchema>;
 
@@ -113,6 +128,7 @@ export function parseProductCsv(text: string): { products: CsvProduct[]; errors:
       inStock: data.con_hang,
       badge: null,
       categoryId: 1,
+      published: true,
     });
     if (!product.success) { errors.push(`Dòng ${index + 1}: ${product.error.issues.map((issue) => issue.message).join("; ")}`); continue; }
     products.push({ ...product.data, line: index + 1, categoryName: data.danh_muc });

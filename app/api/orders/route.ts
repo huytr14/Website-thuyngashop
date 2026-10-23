@@ -25,8 +25,8 @@ export async function POST(request: Request) {
     let result: { order: typeof storeOrders.$inferSelect; shopEmail: string } | undefined;
     for (let attempt = 0; attempt < 5 && !result; attempt++) try {
       result = await db.transaction(async (tx) => {
-      const products = await tx.select({ id: storeProducts.id, name: storeProducts.name, price: storeProducts.price, inStock: storeProducts.inStock }).from(storeProducts).where(inArray(storeProducts.id, input.data.items.map(({ productId }) => productId)));
-      if (products.length !== input.data.items.length || products.some(({ inStock }) => !inStock)) throw new OrderInputError("Có sản phẩm không tồn tại hoặc đã hết hàng");
+      const products = await tx.select({ id: storeProducts.id, name: storeProducts.name, price: storeProducts.price, inStock: storeProducts.inStock, published: storeProducts.published }).from(storeProducts).where(inArray(storeProducts.id, input.data.items.map(({ productId }) => productId)));
+      if (products.length !== input.data.items.length || products.some(({ inStock, published }) => !inStock || !published)) throw new OrderInputError("Có sản phẩm không tồn tại hoặc đã hết hàng");
       const subtotal = input.data.items.reduce((sum, item) => sum + products.find(({ id }) => id === item.productId)!.price * item.quantity, 0);
       const settings = (await tx.select().from(storeShopSettings).where(eq(storeShopSettings.id, 1)).limit(1))[0] ?? defaultShopSettings;
       const shipping = shippingFee(subtotal, settings.freeShippingThreshold, settings.standardShippingFee);

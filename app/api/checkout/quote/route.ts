@@ -14,8 +14,8 @@ export async function POST(request: Request) {
   if (!parsed.success) return Response.json({ error: "Giỏ hàng hoặc mã giảm giá không hợp lệ" }, { status: 400 });
   const { db, close } = openStoreDb();
   try {
-    const products = await db.select({ id: storeProducts.id, price: storeProducts.price, inStock: storeProducts.inStock }).from(storeProducts).where(inArray(storeProducts.id, parsed.data.items.map(({ productId }) => productId)));
-    if (products.length !== parsed.data.items.length || products.some(({ inStock }) => !inStock)) return Response.json({ error: "Có sản phẩm không tồn tại hoặc đã hết hàng" }, { status: 400 });
+    const products = await db.select({ id: storeProducts.id, price: storeProducts.price, inStock: storeProducts.inStock, published: storeProducts.published }).from(storeProducts).where(inArray(storeProducts.id, parsed.data.items.map(({ productId }) => productId)));
+    if (products.length !== parsed.data.items.length || products.some(({ inStock, published }) => !inStock || !published)) return Response.json({ error: "Có sản phẩm không tồn tại hoặc đã hết hàng" }, { status: 400 });
     const subtotal = parsed.data.items.reduce((sum, item) => sum + products.find(({ id }) => id === item.productId)!.price * item.quantity, 0);
     const settings = (await db.select().from(storeShopSettings).where(eq(storeShopSettings.id, 1)).limit(1))[0] ?? defaultShopSettings;
     const shipping = shippingFee(subtotal, settings.freeShippingThreshold, settings.standardShippingFee);

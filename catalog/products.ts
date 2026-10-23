@@ -19,6 +19,8 @@ export type Product = {
   inStock: boolean;
   badge?: string;
   category: string;
+  seoTitle?: string;
+  seoDescription?: string;
 };
 
 type BaseProduct = Pick<Product, "id" | "brand" | "name" | "price" | "oldPrice" | "image" | "badge">;

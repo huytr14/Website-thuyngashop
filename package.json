@@ -11,13 +11,14 @@
     "start": "vinext start",
     "test": "npm run build && npm run test:admin && npm run test:commerce && npm run test:e2e",
     "test:csv": "node --experimental-strip-types --test tests/csv-import.test.ts",
-    "test:admin": "node --experimental-strip-types --test tests/csv-import.test.ts tests/login-rate-limit.test.ts",
+    "test:admin": "node --experimental-strip-types --test tests/csv-import.test.ts tests/login-rate-limit.test.ts tests/media-storage.test.ts",
     "test:commerce": "node --experimental-strip-types --test tests/cart.test.ts tests/commerce.test.ts tests/password.test.ts",
     "test:e2e": "playwright test",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
-    "db:seed": "node --experimental-strip-types scripts/seed.ts"
+    "db:seed": "node --experimental-strip-types scripts/seed.ts",
+    "db:backfill-media": "node --experimental-strip-types scripts/backfill-media.ts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.3",
@@ -30,6 +31,8 @@
     "postgres": "^3.4.9",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
+    "sanitize-html": "^2.18.1",
+    "sharp": "^0.35.5",
     "zod": "^4.6.7"
   },
   "devDependencies": {
@@ -38,6 +41,7 @@
     "@types/node": "22.19.19",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
+    "@types/sanitize-html": "^2.16.2",
     "@vitejs/plugin-react": "^6.1.2",
     "@vitejs/plugin-rsc": "^0.5.38",
     "drizzle-kit": "0.31.10",

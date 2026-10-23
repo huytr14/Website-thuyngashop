@@ -7,7 +7,7 @@ const settingsSchema = z.object({
   freeShippingThreshold: z.coerce.number().int().min(0).max(1_000_000_000),
   standardShippingFee: z.coerce.number().int().min(0).max(10_000_000),
   bankName: z.string().trim().max(150), bankAccountName: z.string().trim().max(150),
-  bankAccountNumber: z.string().trim().max(50), vietQrUrl: z.union([z.literal(""), z.url().max(2000)]),
+  bankAccountNumber: z.string().trim().max(50), vietQrUrl: z.union([z.literal(""), z.url().max(2000), z.string().regex(/^\/media-file\/[0-9a-f-]{36}\.(?:jpg|png|webp|avif)$/)]),
   shopEmail: z.union([z.literal(""), z.email().max(255)]),
   aboutContent: z.string().trim().min(10).max(50000), contactContent: z.string().trim().min(10).max(50000),
   privacyPolicy: z.string().trim().min(10).max(50000), shippingPolicy: z.string().trim().min(10).max(50000),

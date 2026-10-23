@@ -21,7 +21,8 @@ export default function ProductPageClient({ product, products, related, reviews,
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
   useEffect(() => { setCart(parseCart(localStorage.getItem(CART_STORAGE_KEY))); }, []);
-  const descriptionLines = product.description.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const richDescription = /^\s*</.test(product.description);
+  const descriptionLines = richDescription ? [] : product.description.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
   const usageLines = descriptionLines.filter((line) => /^(thành phần|cách dùng)\s*:/i.test(line));
   const benefitText = [product.shortDescription, ...descriptionLines.filter((line) => !usageLines.includes(line))].filter(Boolean).join("\n");
   const count = Object.values(cart).reduce((sum, value) => sum + value, 0);
@@ -51,7 +52,7 @@ export default function ProductPageClient({ product, products, related, reviews,
         <div className="detail-actions"><button type="button" className="add-detail" disabled={!product.inStock} onClick={() => add()}>THÊM VÀO TÚI</button><button type="button" className="buy-now" disabled={!product.inStock} onClick={() => add(true)}>MUA NGAY</button></div>
       </aside>
     </div>
-    {benefitText && <section className="product-page-section"><h2>Mô tả & lợi ích</h2><p className="product-prose">{benefitText}</p></section>}
+    {(benefitText || richDescription) && <section className="product-page-section"><h2>Mô tả & lợi ích</h2>{product.shortDescription && richDescription && <p className="product-prose">{product.shortDescription}</p>}{richDescription ? <div className="product-prose" dangerouslySetInnerHTML={{ __html: product.description }}/> : <p className="product-prose">{benefitText}</p>}</section>}
     {usageLines.length > 0 && <section className="product-page-section"><h2>Thành phần & cách dùng</h2>{usageLines.map((line) => <p className="product-prose" key={line}>{line}</p>)}</section>}
     <section className="product-page-section"><h2>Thông số sản phẩm</h2><dl className="product-specs"><dt>Thương hiệu</dt><dd>{product.brand}</dd><dt>Danh mục</dt><dd>{product.category}</dd>{product.variant && <><dt>Biến thể</dt><dd>{product.variant}</dd></>}<dt>Mã sản phẩm</dt><dd>TNG-{String(product.id).padStart(3, "0")}</dd></dl></section>
     <section className="product-page-section"><h2>Đánh giá đã duyệt</h2>{reviews.length ? reviews.map((review) => <article className="product-review" key={review.id}><strong>{"★".repeat(review.rating)} · {review.title}</strong><p>{review.content}</p><small>{review.customerName ?? "Khách hàng"}</small></article>) : <p>Chưa có đánh giá được duyệt.</p>}</section>

@@ -45,18 +45,44 @@ export const storeProducts = pgTable("products", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   slug: varchar("slug", { length: 200 }).notNull().unique(),
-  brand: varchar("brand", { length: 100 }).notNull(),
-  price: integer("price").notNull(),
-  oldPrice: integer("old_price").notNull(),
-  image: text("image").notNull(),
+  brand: varchar("brand", { length: 100 }).notNull().default(""),
+  price: integer("price").notNull().default(0),
+  oldPrice: integer("old_price").notNull().default(0),
+  image: text("image").notNull().default(""),
   extraImages: jsonb("extra_images").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
   shortDescription: text("short_description").notNull().default(""),
   description: text("description").notNull().default(""),
   variant: text("variant").notNull().default(""),
   inStock: boolean("in_stock").notNull().default(true),
+  published: boolean("published").notNull().default(true),
+  trackInventory: boolean("track_inventory").notNull().default(false),
+  inventoryQuantity: integer("inventory_quantity").notNull().default(0),
+  variantOptions: jsonb("variant_options").$type<{ name: string; values: string[] }[]>().notNull().default(sql`'[]'::jsonb`),
+  variantRows: jsonb("variant_rows").$type<{ name: string; price: number; quantity: number }[]>().notNull().default(sql`'[]'::jsonb`),
+  seoTitle: text("seo_title").notNull().default(""),
+  seoDescription: text("seo_description").notNull().default(""),
   badge: varchar("badge", { length: 50 }),
-  categoryId: integer("category_id").notNull().references(() => storeCategories.id),
+  categoryId: integer("category_id").references(() => storeCategories.id),
 });
+
+export const storeMedia = pgTable("media", {
+  id: serial("id").primaryKey(),
+  storageKey: text("storage_key").unique(),
+  url: text("url").notNull().unique(),
+  alt: text("alt").notNull().default(""),
+  mime: varchar("mime", { length: 100 }).notNull().default(""),
+  sizeBytes: integer("size_bytes").notNull().default(0),
+  width: integer("width"),
+  height: integer("height"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const storeProductMedia = pgTable("product_media", {
+  productId: integer("product_id").notNull().references(() => storeProducts.id, { onDelete: "cascade" }),
+  mediaId: integer("media_id").notNull().references(() => storeMedia.id, { onDelete: "restrict" }),
+  sortOrder: integer("sort_order").notNull(),
+  altOverride: text("alt_override"),
+}, (item) => [primaryKey({ columns: [item.productId, item.mediaId] })]);
 
 export const storeOrders = pgTable("orders", {
   id: serial("id").primaryKey(),

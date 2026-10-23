@@ -29,7 +29,7 @@ Bản hiện tại là **demo duyệt thiết kế đã gửi cho khách**: 1 tr
 - Không bao giờ xử lý hay lưu dữ liệu thẻ — thanh toán qua trang của cổng thanh toán.
 
 ## Repo tham khảo (danh mục đầy đủ: file 08_REPO_THAM_KHAO_GITHUB.md ở hồ sơ dự án)
-- **Đường chính:** Drizzle ORM (`drizzle-team/drizzle-orm`) cho ORM/PostgreSQL; Supabase (`supabase/supabase`) cho database + storage ảnh; shadcn/ui (`shadcn-ui/ui`) cho component admin.
+- **Đường chính:** Drizzle ORM (`drizzle-team/drizzle-orm`) cho ORM/PostgreSQL; lưu ảnh local qua storage adapter ở giai đoạn này (chỉ thêm R2 khi có lệnh deploy); shadcn/ui (`shadcn-ui/ui`) cho component admin.
 - **Chỉ tham khảo pattern, không copy nguyên dự án:** `vercel/commerce` (storefront App Router/RSC/Server Actions/SEO — bỏ qua backend Shopify của nó), template ecommerce của `payloadcms/payload` (mô hình dữ liệu + admin mẫu), examples chính thức trong `vercel/next.js`, `resend/react-email` (email đơn hàng, P2), `nextauthjs/next-auth` (tài khoản khách, P2–P3), `lehuygiang28/vnpay` (VNPAY, chỉ giai đoạn cổng thanh toán, phải đối chiếu tài liệu VNPAY chính thức).
 - **Cấm tự ý dùng:** Medusa, Saleor, các template Stripe/nền tảng trả phí, template cộng đồng không rõ giấy phép — trừ khi có lệnh mới rõ ràng.
 

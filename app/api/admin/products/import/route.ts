@@ -38,7 +38,7 @@ export async function POST(request: Request) {
       for (const product of parsed.products) {
         const existing = byName.get(product.name.toLocaleLowerCase("vi-VN"));
         const categoryId = categoryIds.get(product.categoryName.toLocaleLowerCase("vi-VN"))!;
-        const { categoryName: _categoryName, line: _line, ...values } = product;
+        const { categoryName: _categoryName, line: _line, mediaIds: _mediaIds, slugCustom: _slugCustom, ...values } = product;
         const row = { ...values, slug: existing?.slug ?? values.slug, badge: existing?.badge ?? null, categoryId };
         if (existing) { await tx.update(storeProducts).set(row).where(eq(storeProducts.id, existing.id)); updated++; }
         else { await tx.insert(storeProducts).values(row); created++; }
