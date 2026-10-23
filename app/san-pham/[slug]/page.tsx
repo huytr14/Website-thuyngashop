@@ -1,14 +1,17 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getApprovedProductReviews, getApprovedReviewSummaries, getStoreCatalog } from "@/db/store";
+import { getApprovedProductReviews, getApprovedReviewSummaries, getSiteContent, getStoreCatalog } from "@/db/store";
 import ProductPageClient from "./ProductPageClient";
+import { pageMetadata } from "@/lib/site-metadata";
 
 export const revalidate = 300;
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const product = (await getStoreCatalog()).products.find((item) => item.slug === slug);
-  return product ? { title: product.seoTitle || `${product.name} | THUYNGA Shop`, description: product.seoDescription || product.shortDescription || product.name, openGraph: { title: product.seoTitle || product.name, description: product.seoDescription || product.shortDescription || product.name, images: [product.image] } } : {};
+  if (!product) return {};
+  const metadata = await pageMetadata(product.name, product.seoDescription || product.shortDescription || product.name, product.image);
+  return product.seoTitle ? { ...metadata, title: { absolute: product.seoTitle }, openGraph: { ...metadata.openGraph, title: product.seoTitle } } : metadata;
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -16,7 +19,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const catalog = await getStoreCatalog();
   const product = catalog.products.find((item) => item.slug === slug);
   if (!product) notFound();
-  const [reviews, summaries] = await Promise.all([getApprovedProductReviews(product.id), getApprovedReviewSummaries()]);
+  const [reviews, summaries, site] = await Promise.all([getApprovedProductReviews(product.id), getApprovedReviewSummaries(), getSiteContent()]);
   const related = catalog.products.filter((item) => item.category === product.category && item.id !== product.id).slice(0, 4);
-  return <ProductPageClient product={product} products={catalog.products} related={related} reviews={reviews} summaries={summaries}/>;
+  return <ProductPageClient product={product} products={catalog.products} related={related} reviews={reviews} summaries={summaries} site={site}/>;
 }

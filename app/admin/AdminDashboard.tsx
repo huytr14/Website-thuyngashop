@@ -5,13 +5,14 @@ import ProductEditor, { type EditorProduct } from "@/components/admin/ProductEdi
 import MediaPicker from "@/components/admin/MediaPicker";
 import "./editor.css";
 import styles from "./admin.module.css";
+import { defaultSiteContent, mergeSiteContent, type SiteContent } from "@/lib/site-content";
 
 type Category = { id: number; name: string; slug: string };
 type Product = EditorProduct & { categoryName: string | null };
 type OrderStatus = "MOI" | "DA_XAC_NHAN" | "DANG_GIAO" | "HOAN_THANH" | "HUY";
 type Order = { id: number; code: string; customerName: string; email: string; phone: string; address: string; city: string; district: string; note: string | null; subtotal: number; shippingFee: number; discount: number; total: number; voucherCode: string | null; paymentMethod: string; status: OrderStatus; createdAt: string };
 type OrderItem = { id: number; productName: string; price: number; quantity: number };
-type Settings = { freeShippingThreshold: number; standardShippingFee: number; bankName: string; bankAccountName: string; bankAccountNumber: string; vietQrUrl: string; shopEmail: string; aboutContent: string; contactContent: string; privacyPolicy: string; shippingPolicy: string; returnsPolicy: string; termsPolicy: string };
+type Settings = { freeShippingThreshold: number; standardShippingFee: number; bankName: string; bankAccountName: string; bankAccountNumber: string; vietQrUrl: string; shopEmail: string; aboutContent: string; contactContent: string; privacyPolicy: string; shippingPolicy: string; returnsPolicy: string; termsPolicy: string; siteContent: SiteContent };
 type ContactMessage = { id: number; name: string; email: string; phone: string | null; message: string; createdAt: string };
 
 const nextStatuses: Record<OrderStatus, OrderStatus[]> = { MOI: ["DA_XAC_NHAN", "HUY"], DA_XAC_NHAN: ["DANG_GIAO", "HUY"], DANG_GIAO: ["HOAN_THANH", "HUY"], HOAN_THANH: [], HUY: [] };
@@ -111,13 +112,13 @@ export default function AdminDashboard() {
 
   return <div className={styles.shell}>
     <aside className={styles.sidebar}>
-      <a href="/" className={styles.logo}><img src="/thuynga-logo-wine.png" alt="THUYNGA Shop"/></a>
+      <a href="/" className={styles.logo}><img src={settings ? mergeSiteContent(settings.siteContent).brand.logo : defaultSiteContent.brand.logo} alt={settings ? mergeSiteContent(settings.siteContent).brand.name : defaultSiteContent.brand.name}/></a>
       <p>ADMIN CONSOLE</p>
       <nav className={styles.adminNav}>
         <button className={view === "products" ? styles.activeNav : ""} onClick={() => setView("products")}>Sản phẩm {!loading && <small>{products.length}</small>}</button>
         <button className={view === "orders" ? styles.activeNav : ""} onClick={() => setView("orders")}>Đơn hàng <small>{orders.length}</small></button>
         <button className={view === "settings" ? styles.activeNav : ""} onClick={() => setView("settings")}>Cấu hình</button>
-        <a href="/admin/tin-tuc">Tin tức</a><a href="/admin/thu-vien-anh">Thư viện ảnh</a><a href="/admin/danh-gia">Đánh giá</a>
+        <a href="/admin/giao-dien">Giao diện & Nội dung</a><a href="/admin/tin-tuc">Tin tức</a><a href="/admin/thu-vien-anh">Thư viện ảnh</a><a href="/admin/danh-gia">Đánh giá</a><a href="/admin/ma-giam-gia">Mã giảm giá</a><a href="/admin/khach-hang">Khách hàng</a>
       </nav>
       <div className={styles.sideBottom}><a href="/">← Xem cửa hàng</a><form action="/api/admin/logout" method="post"><button>Đăng xuất</button></form></div>
     </aside>
@@ -164,7 +165,7 @@ export default function AdminDashboard() {
         <label>ẢNH VIETQR <MediaPicker selected={qrMedia} onChange={setQrMedia} multiple={false}/><input name="vietQrUrl" type="url" maxLength={2000} defaultValue={settings.vietQrUrl} placeholder="URL cũ (dự phòng)"/></label>
         <label className={styles.full}>EMAIL NHẬN THÔNG BÁO ĐƠN<input name="shopEmail" type="email" maxLength={255} defaultValue={settings.shopEmail}/></label>
         <label className={styles.full}>NỘI DUNG GIỚI THIỆU<textarea name="aboutContent" required rows={7} defaultValue={settings.aboutContent}/></label>
-        <label className={styles.full}>NỘI DUNG LIÊN HỆ<textarea name="contactContent" required rows={5} defaultValue={settings.contactContent}/></label>
+        <input type="hidden" name="contactContent" value={settings.contactContent}/>
         <label className={styles.full}>CHÍNH SÁCH BẢO MẬT<textarea name="privacyPolicy" required rows={7} defaultValue={settings.privacyPolicy}/></label>
         <label className={styles.full}>CHÍNH SÁCH VẬN CHUYỂN<textarea name="shippingPolicy" required rows={7} defaultValue={settings.shippingPolicy}/></label>
         <label className={styles.full}>CHÍNH SÁCH ĐỔI TRẢ<textarea name="returnsPolicy" required rows={7} defaultValue={settings.returnsPolicy}/></label>

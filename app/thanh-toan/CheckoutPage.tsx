@@ -5,11 +5,12 @@ import type { Product } from "@/catalog/products";
 import { formatPrice as format } from "@/catalog/products";
 import { CART_STORAGE_KEY, parseCart } from "@/lib/cart";
 import { shippingFee } from "@/lib/commerce";
+import type { SiteContent } from "@/lib/site-content";
 
 type Settings = { freeShippingThreshold: number; standardShippingFee: number; bankName: string; bankAccountName: string; bankAccountNumber: string; vietQrUrl: string };
 type Quote = { subtotal: number; shipping: number; discount: number; total: number; voucherCode: string };
 
-export default function CheckoutPage({ products, settings }: { products: Product[]; settings: Settings }) {
+export default function CheckoutPage({ products, settings, site }: { products: Product[]; settings: Settings; site: SiteContent }) {
   const [cart, setCart] = useState<Record<number, number>>({});
   const [loaded, setLoaded] = useState(false);
   const [payment, setPayment] = useState<"COD" | "BANK_TRANSFER">("COD");
@@ -59,11 +60,11 @@ export default function CheckoutPage({ products, settings }: { products: Product
     setSending(false);
   };
 
-  if (order) return <main className="checkout checkout-page"><div className="checkout-top"><a href="/" className="logo brand-logo"><img src="/thuynga-logo-wine.png" alt="THUYNGA Shop"/></a></div><div className="success"><span>✓</span><p className="eyebrow">ĐẶT HÀNG THÀNH CÔNG</p><h1>Cảm ơn bạn đã đặt hàng.</h1><p>Mã đơn của bạn là <strong>{order.code}</strong>. Tổng thanh toán {format(order.total)}.</p>{order.paymentMethod === "BANK_TRANSFER" && <p>Vui lòng chuyển khoản với nội dung <strong>{order.code}</strong>.</p>}<a className="place-order success-link" href="/">TIẾP TỤC MUA SẮM</a></div></main>;
-  if (loaded && !lines.length) return <main className="checkout checkout-page"><div className="checkout-top"><a href="/" className="logo brand-logo"><img src="/thuynga-logo-wine.png" alt="THUYNGA Shop"/></a></div><div className="success"><span>◇</span><h1>Túi hàng đang trống.</h1><a className="place-order success-link" href="/">QUAY LẠI CỬA HÀNG</a></div></main>;
+  if (order) return <main className="checkout checkout-page"><div className="checkout-top"><a href="/" className="logo brand-logo"><img src={site.brand.logo} alt={site.brand.name}/></a></div><div className="success"><span>✓</span><p className="eyebrow">ĐẶT HÀNG THÀNH CÔNG</p><h1>Cảm ơn bạn đã đặt hàng.</h1><p>Mã đơn của bạn là <strong>{order.code}</strong>. Tổng thanh toán {format(order.total)}.</p>{order.paymentMethod === "BANK_TRANSFER" && <p>Vui lòng chuyển khoản với nội dung <strong>{order.code}</strong>.</p>}<a className="place-order success-link" href="/">TIẾP TỤC MUA SẮM</a></div></main>;
+  if (loaded && !lines.length) return <main className="checkout checkout-page"><div className="checkout-top"><a href="/" className="logo brand-logo"><img src={site.brand.logo} alt={site.brand.name}/></a></div><div className="success"><span>◇</span><h1>Túi hàng đang trống.</h1><a className="place-order success-link" href="/">QUAY LẠI CỬA HÀNG</a></div></main>;
 
   return <main className="checkout checkout-page">
-    <div className="checkout-top"><a href="/" className="logo brand-logo" aria-label="THUYNGA Shop"><img src="/thuynga-logo-wine.png" alt="THUYNGA Shop"/></a><a href="/">×</a></div>
+    <div className="checkout-top"><a href="/" className="logo brand-logo" aria-label={site.brand.name}><img src={site.brand.logo} alt={site.brand.name}/></a><a href="/">×</a></div>
     <form onSubmit={submit} className="checkout-grid">
       <section className="checkout-form">
         <div className="checkout-steps"><b>1 Thông tin</b><span>2 Vận chuyển</span><span>3 Thanh toán</span></div>

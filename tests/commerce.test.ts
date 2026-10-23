@@ -14,6 +14,7 @@ test("từ chối voucher hết hạn, hết lượt và chưa đủ giá trị 
   const voucher = { type: "PERCENT" as const, value: 10, active: true, minOrder: 500000, expiresAt: null, usageLimit: 1, usedCount: 0 };
   assert.match(voucherError(voucher, 400000)!, /tối thiểu/);
   assert.match(voucherError({ ...voucher, usedCount: 1 }, 500000)!, /hết lượt/);
+  assert.match(voucherError({ ...voucher, startsAt: new Date("2030-01-01T00:00:00Z") }, 500000, new Date("2029-12-31T00:00:00Z"))!, /chưa bắt đầu/);
   assert.equal(voucherError(voucher, 500000), null);
 });
 

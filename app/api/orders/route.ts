@@ -1,4 +1,4 @@
-import { eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { checkoutSchema } from "@/app/checkout-schema";
 import { checkoutRateLimited, requestClient } from "@/app/checkout-rate-limit";
@@ -33,6 +33,10 @@ export async function POST(request: Request) {
       const voucher = input.data.voucherCode ? (await tx.select().from(storeVouchers).where(eq(storeVouchers.code, input.data.voucherCode)).for("update").limit(1))[0] : undefined;
       const error = input.data.voucherCode ? voucherError(voucher as VoucherRule | undefined, subtotal) : null;
       if (error) throw new OrderInputError(error);
+      if (voucher?.perCustomerLimit) {
+        const [{ count }] = await tx.select({ count: sql<number>`count(*)::int` }).from(storeOrders).where(and(eq(storeOrders.voucherCode, voucher.code), eq(storeOrders.email, input.data.email)));
+        if (count >= voucher.perCustomerLimit) throw new OrderInputError("Bạn đã dùng hết lượt cho mã giảm giá này");
+      }
       const discount = voucherDiscount(voucher as VoucherRule | null, subtotal, shipping);
       const total = subtotal + shipping - discount;
       const [order] = await tx.insert(storeOrders).values({

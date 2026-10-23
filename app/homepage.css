@@ -37,3 +37,4 @@
 @media(max-width:380px){.hero-copy{min-height:380px}.hero h1{font-size:45px!important}.hero-image{height:330px;min-height:330px}.product h3{font-size:14px!important}.new-card{min-width:82vw}.campaign-copy h2{font-size:39px!important}.checkout-steps{font-size:8px!important}}
 /* Native rendering deferral keeps below-the-fold sections out of initial layout work. */
 .feature-banner, .category-section, .new-products, .price-edit, .brand-strip, .journal, .benefits, footer { content-visibility: auto; contain-intrinsic-size: auto 700px; }
+.testimonial-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}.testimonial-grid article{padding:25px;background:#faf5f6;border:1px solid #eadce0;border-radius:12px}.testimonial-grid img{width:56px;height:56px;border-radius:50%;object-fit:cover}.testimonial-grid p{color:#800028}.testimonial-grid blockquote{margin:12px 0;line-height:1.6}@media(max-width:700px){.testimonial-grid{grid-template-columns:1fr}}

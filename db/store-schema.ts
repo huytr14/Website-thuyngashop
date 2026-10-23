@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { boolean, integer, jsonb, pgTable, primaryKey, serial, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/pg-core";
+import type { SiteContent } from "../lib/site-content";
 
 export const storeUsers = pgTable("users", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -8,6 +9,7 @@ export const storeUsers = pgTable("users", {
   emailVerified: timestamp("email_verified", { mode: "date" }),
   image: text("image"),
   passwordHash: text("password_hash"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const storeAccounts = pgTable("accounts", {
@@ -117,6 +119,7 @@ export const storeOrderItems = pgTable("order_items", {
 
 export const storeShopSettings = pgTable("shop_settings", {
   id: integer("id").primaryKey().default(1),
+  siteContent: jsonb("site_content").$type<SiteContent>().notNull().default(sql`'{}'::jsonb`),
   freeShippingThreshold: integer("free_shipping_threshold").notNull().default(1000000),
   standardShippingFee: integer("standard_shipping_fee").notNull().default(30000),
   bankName: varchar("bank_name", { length: 150 }).notNull().default(""),
@@ -139,6 +142,8 @@ export const storeVouchers = pgTable("vouchers", {
   value: integer("value").notNull().default(0),
   minOrder: integer("min_order").notNull().default(0),
   expiresAt: timestamp("expires_at", { withTimezone: true }),
+  startsAt: timestamp("starts_at", { withTimezone: true }),
+  perCustomerLimit: integer("per_customer_limit"),
   usageLimit: integer("usage_limit"),
   usedCount: integer("used_count").notNull().default(0),
   active: boolean("active").notNull().default(true),
@@ -168,4 +173,5 @@ export const storeReviews = pgTable("reviews", {
   orderId: integer("order_id").notNull().references(() => storeOrders.id, { onDelete: "cascade" }), rating: integer("rating").notNull(),
   title: varchar("title", { length: 150 }).notNull().default(""), content: text("content").notNull(), status: varchar("status", { length: 20 }).notNull().default("PENDING"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  shopReply: text("shop_reply"),
 }, (review) => [uniqueIndex("reviews_user_product_order_unique").on(review.userId, review.productId, review.orderId)]);

@@ -2,6 +2,7 @@ import { ArrowRight, ArrowUpRight, ShoppingBag } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Product } from "./types";
 import type { ReviewSummary } from "@/db/store";
+import { defaultSiteContent, type SiteContent } from "@/lib/site-content";
 
 type ProductGridProps = {
   categories: string[];
@@ -18,12 +19,13 @@ type ProductGridProps = {
   buyNow: (id: number) => void;
   format: (value: number) => string;
   reviewSummaries: Record<number, ReviewSummary>;
+  section?: SiteContent["sections"]["deals"];
 };
 
-export default function ProductGrid({ categories, category, sort, query, filtered, visibleProducts, showAllProducts, setCategory, setSort, setShowAllProducts, openProduct, buyNow, format, reviewSummaries }: ProductGridProps) {
+export default function ProductGrid({ categories, category, sort, query, filtered, visibleProducts, showAllProducts, setCategory, setSort, setShowAllProducts, openProduct, buyNow, format, reviewSummaries, section = defaultSiteContent.sections.deals }: ProductGridProps) {
   return <section className="products section product-first" id="deals">
     <div className="shop-heading">
-      <div><span className="section-overline">01 / BỘ SƯU TẬP MỸ PHẨM</span><h2>KHÁM PHÁ SẢN PHẨM</h2><p>30 lựa chọn chăm sóc da, trang điểm và tóc — chọn món yêu thích, xem chi tiết và mua ngay.</p></div>
+      <div><span className="section-overline">01 / BỘ SƯU TẬP MỸ PHẨM</span><h2>{section.title}</h2><p>{section.subtitle}</p></div>
     </div>
     <div className="catalog-toolbar">
       <Tabs value={category} onValueChange={setCategory}><TabsList className="catalog-tabs" aria-label="Danh mục sản phẩm">{categories.map((name) => <TabsTrigger key={name} value={name}>{name}</TabsTrigger>)}</TabsList></Tabs>

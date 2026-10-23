@@ -2,15 +2,17 @@ import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { Pool } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-serverless";
 import { sanitizeRichText } from "@/lib/sanitize-rich-text";
+import { defaultSiteContent, mergeSiteContent } from "@/lib/site-content";
 import type { Product } from "@/catalog/products";
 import { categories as fallbackCategories, products as fallbackProducts } from "@/catalog/products";
 import { storeCategories, storeMedia, storeProductMedia, storeProducts, storeReviews, storeShopSettings, storeUsers } from "./store-schema";
 
 export type ReviewSummary = { count: number; average: number };
-export type ProductReview = { id: number; rating: number; title: string; content: string; customerName: string | null };
+export type ProductReview = { id: number; rating: number; title: string; content: string; customerName: string | null; shopReply: string | null };
 
 export const defaultShopSettings = {
   id: 1, freeShippingThreshold: 1000000, standardShippingFee: 30000,
+  siteContent: defaultSiteContent,
   bankName: "", bankAccountName: "", bankAccountNumber: "", vietQrUrl: "", shopEmail: "",
   aboutContent: "THUYNGA Shop tuyển chọn những sản phẩm làm đẹp phù hợp cho nhịp sống hiện đại.",
   contactContent: "Hãy để lại lời nhắn, THUYNGA Shop sẽ phản hồi trong thời gian sớm nhất.",
@@ -74,6 +76,13 @@ export async function getShopSettings() {
   } finally { await close(); }
 }
 
+export async function getSiteContent() {
+  const settings = await getShopSettings();
+  const site = mergeSiteContent(settings.siteContent);
+  if (!Object.hasOwn((settings.siteContent as Partial<typeof defaultSiteContent>)?.footer ?? {}, "contactContent") && settings.contactContent !== defaultShopSettings.contactContent) return { ...site, footer: { ...site.footer, contactContent: settings.contactContent } };
+  return site;
+}
+
 export async function getApprovedReviewSummaries(): Promise<Record<number, ReviewSummary>> {
   if (!process.env.DATABASE_URL) return {};
   const { db, close } = openStoreDb();
@@ -88,7 +97,7 @@ export async function getApprovedProductReviews(productId: number): Promise<Prod
   if (!process.env.DATABASE_URL) return [];
   const { db, close } = openStoreDb();
   try {
-    return await db.select({ id: storeReviews.id, rating: storeReviews.rating, title: storeReviews.title, content: storeReviews.content, customerName: storeUsers.name })
+    return await db.select({ id: storeReviews.id, rating: storeReviews.rating, title: storeReviews.title, content: storeReviews.content, customerName: storeUsers.name, shopReply: storeReviews.shopReply })
       .from(storeReviews).innerJoin(storeUsers, eq(storeReviews.userId, storeUsers.id))
       .where(and(eq(storeReviews.productId, productId), eq(storeReviews.status, "APPROVED"))).orderBy(desc(storeReviews.createdAt));
   } finally { await close(); }

@@ -1,5 +1,5 @@
 export type VoucherValue = { type: "PERCENT" | "FIXED" | "FREESHIP"; value: number };
-export type VoucherRule = VoucherValue & { active: boolean; minOrder: number; expiresAt: Date | null; usageLimit: number | null; usedCount: number };
+export type VoucherRule = VoucherValue & { active: boolean; minOrder: number; startsAt?: Date | null; expiresAt: Date | null; usageLimit: number | null; usedCount: number };
 export type OrderStatus = "MOI" | "DA_XAC_NHAN" | "DANG_GIAO" | "HOAN_THANH" | "HUY";
 
 export function shippingFee(subtotal: number, threshold: number, fee: number) {
@@ -15,6 +15,7 @@ export function voucherDiscount(voucher: VoucherValue | null, subtotal: number, 
 
 export function voucherError(voucher: VoucherRule | undefined, subtotal: number, now = new Date()) {
   if (!voucher || !voucher.active) return "Mã giảm giá không tồn tại hoặc đã tắt";
+  if (voucher.startsAt && voucher.startsAt > now) return "Mã giảm giá chưa bắt đầu";
   if (voucher.expiresAt && voucher.expiresAt <= now) return "Mã giảm giá đã hết hạn";
   if (voucher.usageLimit !== null && voucher.usedCount >= voucher.usageLimit) return "Mã giảm giá đã hết lượt sử dụng";
   if (subtotal < voucher.minOrder) return `Đơn hàng tối thiểu ${voucher.minOrder.toLocaleString("vi-VN")}₫`;

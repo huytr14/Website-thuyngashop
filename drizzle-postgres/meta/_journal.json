@@ -36,6 +36,13 @@
       "when": 1792728294393,
       "tag": "0004_magenta_sunfire",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792731853916,
+      "tag": "0005_supreme_master_chief",
+      "breakpoints": true
     }
   ]
 }

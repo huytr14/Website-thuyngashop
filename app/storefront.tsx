@@ -12,10 +12,11 @@ import type { Product } from "@/components/storefront/types";
 import type { ReviewSummary } from "@/db/store";
 import { formatPrice as format } from "@/catalog/products";
 import { CART_STORAGE_KEY, parseCart, storeCart } from "@/lib/cart";
+import { defaultSiteContent, type SiteContent } from "@/lib/site-content";
 
-type StorefrontProps = { products: Product[]; categories: string[]; reviewSummaries: Record<number, ReviewSummary>; policies: { shipping: string; returns: string; contact: string } };
+type StorefrontProps = { products: Product[]; categories: string[]; reviewSummaries: Record<number, ReviewSummary>; policies: { shipping: string; returns: string; contact: string }; site?: SiteContent };
 
-export default function Storefront({ products, categories, reviewSummaries, policies }: StorefrontProps) {
+export default function Storefront({ products, categories, reviewSummaries, policies, site = defaultSiteContent }: StorefrontProps) {
   const [cart, setCart] = useState<Record<number, number>>({});
   const [cartOpen, setCartOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -72,27 +73,27 @@ export default function Storefront({ products, categories, reviewSummaries, poli
 
   return (
     <main>
-      <Header menuOpen={menuOpen} searchOpen={searchOpen} query={query} count={count} setMenuOpen={setMenuOpen} setSearchOpen={setSearchOpen} setQuery={setQuery} setCategory={setCategory} openCart={() => setCartOpen(true)}/>
-      <Hero heroIndex={heroIndex} setHeroIndex={setHeroIndex}/>
-      <ProductGrid categories={categories} category={category} sort={sort} query={query} filtered={filtered} visibleProducts={visibleProducts} showAllProducts={showAllProducts} setCategory={setCategory} setSort={setSort} setShowAllProducts={setShowAllProducts} openProduct={openProduct} buyNow={buyNow} format={format} reviewSummaries={reviewSummaries}/>
+      <Header menuOpen={menuOpen} searchOpen={searchOpen} query={query} count={count} setMenuOpen={setMenuOpen} setSearchOpen={setSearchOpen} setQuery={setQuery} setCategory={setCategory} openCart={() => setCartOpen(true)} site={site}/>
+      <Hero heroIndex={heroIndex} setHeroIndex={setHeroIndex} slides={site.hero}/>
+      {site.sections.deals.enabled && <ProductGrid categories={categories} category={category} sort={sort} query={query} filtered={filtered} visibleProducts={visibleProducts} showAllProducts={showAllProducts} setCategory={setCategory} setSort={setSort} setShowAllProducts={setShowAllProducts} openProduct={openProduct} buyNow={buyNow} format={format} reviewSummaries={reviewSummaries} section={site.sections.deals}/>}
 
-      <section className="feature-banner">
-        <div><p>THUYNGA BEAUTY EDIT</p><h2>Mỗi ngày là một<br/><em>khoảnh khắc đẹp.</em></h2><span>Một chút chăm sóc, một chút sắc màu — để bạn luôn là phiên bản mình yêu thích.</span><a href="#new-arrivals">KHÁM PHÁ THÊM <ArrowUpRight size={16}/></a></div>
-        <img src="https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=1400&q=85" alt="Bộ sưu tập mỹ phẩm" loading="lazy"/>
-      </section>
+      {site.sections.feature.enabled && <section className="feature-banner">
+        <div><p>THUYNGA BEAUTY EDIT</p><h2>{site.sections.feature.title.split("\n")[0]}<br/><em>{site.sections.feature.title.split("\n").slice(1).join(" ")}</em></h2><span>{site.sections.feature.subtitle}</span><a href="#new-arrivals">KHÁM PHÁ THÊM <ArrowUpRight size={16}/></a></div>
+        <img src={site.home.featureImage || defaultSiteContent.home.featureImage} alt="Bộ sưu tập mỹ phẩm" loading="lazy"/>
+      </section>}
 
-      <section className="category-section section" id="categories">
-        <div className="section-intro"><div><span className="section-overline">02 / MUA SẮM THEO NHU CẦU</span><h2>Khám phá danh mục</h2></div><p>Từ bước chăm sóc da mỗi ngày đến điểm nhấn cuối cùng cho diện mạo của bạn.</p></div>
+      {site.sections.categories.enabled && <section className="category-section section" id="categories">
+        <div className="section-intro"><div><span className="section-overline">02 / MUA SẮM THEO NHU CẦU</span><h2>{site.sections.categories.title}</h2></div><p>{site.sections.categories.subtitle}</p></div>
         <div className="beauty-categories">
-          <a className="beauty-category" href="#deals" onClick={() => setCategory("Chăm sóc da")}><img src="https://images.unsplash.com/photo-1556229010-6c3f2c9ca5f8?auto=format&fit=crop&w=1000&q=85" alt="Chăm sóc da" loading="lazy"/><span>01 / SKINCARE</span><strong>Chăm sóc da</strong><ArrowUpRight size={23}/></a>
-          <a className="beauty-category" href="#deals" onClick={() => setCategory("Trang điểm")}><img src="https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=1000&q=85" alt="Trang điểm" loading="lazy"/><span>02 / MAKEUP</span><strong>Trang điểm</strong><ArrowUpRight size={23}/></a>
-          <a className="beauty-category" href="#deals" onClick={() => setCategory("Tóc & cơ thể")}><img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1000&q=85" alt="Cảm hứng chăm sóc tóc và cơ thể" loading="lazy"/><span>03 / BODY & HAIR</span><strong>Tóc & cơ thể</strong><ArrowUpRight size={23}/></a>
+          <a className="beauty-category" href="#deals" onClick={() => setCategory("Chăm sóc da")}><img src={site.home.categoryImages[0] || defaultSiteContent.home.categoryImages[0]} alt="Chăm sóc da" loading="lazy"/><span>01 / SKINCARE</span><strong>Chăm sóc da</strong><ArrowUpRight size={23}/></a>
+          <a className="beauty-category" href="#deals" onClick={() => setCategory("Trang điểm")}><img src={site.home.categoryImages[1] || defaultSiteContent.home.categoryImages[1]} alt="Trang điểm" loading="lazy"/><span>02 / MAKEUP</span><strong>Trang điểm</strong><ArrowUpRight size={23}/></a>
+          <a className="beauty-category" href="#deals" onClick={() => setCategory("Tóc & cơ thể")}><img src={site.home.categoryImages[2] || defaultSiteContent.home.categoryImages[2]} alt="Cảm hứng chăm sóc tóc và cơ thể" loading="lazy"/><span>03 / BODY & HAIR</span><strong>Tóc & cơ thể</strong><ArrowUpRight size={23}/></a>
         </div>
-      </section>
+      </section>}
 
-      <section className="new-products section" id="new-arrivals">
+      {site.sections.newProducts.enabled && <section className="new-products section" id="new-arrivals">
         <div className="section-heading">
-          <div><span className="section-overline">03 / GỢI Ý CHO BẠN</span><h2>BEAUTY EDIT</h2><p>Thêm cảm hứng cho giỏ hàng của bạn, từ dưỡng da đến chăm sóc cơ thể.</p></div>
+          <div><span className="section-overline">03 / GỢI Ý CHO BẠN</span><h2>{site.sections.newProducts.title}</h2><p>{site.sections.newProducts.subtitle}</p></div>
           <a href="#deals" onClick={() => setShowAllProducts(true)}>Xem tất cả <ArrowUpRight size={15}/></a>
         </div>
         <div className="new-grid">
@@ -102,11 +103,11 @@ export default function Storefront({ products, categories, reviewSummaries, poli
             <div><p>{p.brand}</p><h3><a className="product-link" href={`/san-pham/${p.slug}`}>{p.name}</a></h3>{reviewSummaries[p.id] && <p className="product-rating">★ {reviewSummaries[p.id].average.toLocaleString("vi-VN")} ({reviewSummaries[p.id].count})</p>}<strong>{format(p.price)}</strong><button onClick={() => add(p.id)} aria-label={`Thêm ${p.name} vào túi`}><ShoppingBag size={16}/></button></div>
           </article>)}
         </div>
-      </section>
+      </section>}
 
-      <section className="price-edit section" id="under-million">
+      {site.sections.priceEdit.enabled && <section className="price-edit section" id="under-million">
         <div className="section-heading">
-          <div><span className="section-overline">04 / DỄ BẮT ĐẦU</span><h2>ĐẸP MỖI NGÀY, GIÁ DỄ CHỌN</h2><p>Những món nhỏ xinh dưới 1 triệu đồng trong danh mục mẫu.</p></div>
+          <div><span className="section-overline">04 / DỄ BẮT ĐẦU</span><h2>{site.sections.priceEdit.title}</h2><p>{site.sections.priceEdit.subtitle}</p></div>
           <a href="#deals" onClick={() => { setShowAllProducts(true); setSort("price-asc"); }}>Khám phá tất cả <ArrowUpRight size={15}/></a>
         </div>
         <div className="price-edit-grid">
@@ -115,27 +116,24 @@ export default function Storefront({ products, categories, reviewSummaries, poli
             <div><small>{p.brand}</small><h3><a className="product-link" href={`/san-pham/${p.slug}`}>{p.name}</a></h3>{reviewSummaries[p.id] && <p className="product-rating">★ {reviewSummaries[p.id].average.toLocaleString("vi-VN")} ({reviewSummaries[p.id].count})</p>}<strong>{format(p.price)}</strong><button className="price-edit-buy" onClick={() => buyNow(p.id)}>MUA NGAY <ArrowUpRight size={13}/></button></div>
           </article>)}
         </div>
-      </section>
+      </section>}
 
-      <section className="brand-strip" aria-label="Các nhu cầu làm đẹp"><p>CHỌN MÓN ĐẸP THEO NHU CẦU</p><div><span>DƯỠNG ẨM</span><span>LÀM SẠCH</span><span>TRANG ĐIỂM</span><span>CHĂM SÓC TÓC</span><span>CHĂM SÓC CƠ THỂ</span></div></section>
+      {site.sections.brandStrip.enabled && <section className="brand-strip" aria-label="Các nhu cầu làm đẹp"><p>{site.sections.brandStrip.title}</p><div>{site.home.brandTags.map((tag, index) => <span key={index}>{tag}</span>)}</div></section>}
 
-      <section className="journal section">
-        <div className="section-intro"><div><span className="section-overline">05 / THE BEAUTY NOTES</span><h2>Cảm hứng mỗi ngày</h2></div><p>Những ý tưởng nhỏ để việc chăm sóc bản thân luôn là một niềm vui.</p></div>
+      {site.sections.journal.enabled && <section className="journal section">
+        <div className="section-intro"><div><span className="section-overline">05 / THE BEAUTY NOTES</span><h2>{site.sections.journal.title}</h2></div><p>{site.sections.journal.subtitle}</p></div>
         <div className="journal-grid">
-          <a href="#deals" onClick={() => setCategory("Chăm sóc da")}><img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=950&q=85" alt="Cảm hứng chăm sóc bản thân" loading="lazy"/><span>01 / BEAUTY RITUAL</span><h3>Vẻ đẹp bắt đầu từ những phút dành cho mình</h3><small>KHÁM PHÁ CHĂM SÓC DA <ArrowUpRight size={14}/></small></a>
-          <a href="#deals" onClick={() => setCategory("Trang điểm")}><img src="https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=950&q=85" alt="Các sản phẩm trang điểm" loading="lazy"/><span>02 / COLOR STORY</span><h3>Một sắc màu nhỏ, một ngày thật khác</h3><small>KHÁM PHÁ TRANG ĐIỂM <ArrowUpRight size={14}/></small></a>
-          <a href="#deals" onClick={() => setCategory("Tóc & cơ thể")}><img src="https://images.unsplash.com/photo-1522338242992-e1a54906a8da?auto=format&fit=crop&w=950&q=85" alt="Chăm sóc tóc và cơ thể" loading="lazy"/><span>03 / SELF CARE</span><h3>Nhịp chăm sóc dịu dàng cho mỗi ngày</h3><small>KHÁM PHÁ SẢN PHẨM <ArrowUpRight size={14}/></small></a>
+          {site.home.journal.map((item, index) => <a key={index} href="#deals" onClick={() => setCategory(["Chăm sóc da", "Trang điểm", "Tóc & cơ thể"][index])}><img src={item.image || defaultSiteContent.home.journal[index].image} alt={item.title} loading="lazy"/><span>{item.label}</span><h3>{item.title}</h3><small>{item.linkText} <ArrowUpRight size={14}/></small></a>)}
         </div>
-      </section>
+      </section>}
 
-      <section className="benefits">
-        <div><Sparkles size={30}/><h3>Chọn lọc tinh tế</h3><p>Khám phá sản phẩm theo từng nhu cầu làm đẹp.</p></div>
-        <div><Search size={30}/><h3>Tìm kiếm dễ dàng</h3><p>Chọn danh mục hoặc tìm tên sản phẩm thật nhanh.</p></div>
-        <div><ShoppingBag size={30}/><h3>Mua sắm thuận tiện</h3><p>Xem chi tiết, thêm vào túi và đặt hàng trong vài bước.</p></div>
-        <div><Headphones size={30}/><h3>Thông tin rõ ràng</h3><p>Chính sách và kênh hỗ trợ sẽ cập nhật khi vận hành.</p></div>
-      </section>
+      {site.sections.benefits.enabled && <section className="benefits">
+        {site.home.benefits.map((item, index) => <div key={index}>{[<Sparkles size={30}/>, <Search size={30}/>, <ShoppingBag size={30}/>, <Headphones size={30}/>][index]}<h3>{item.title}</h3><p>{item.description}</p></div>)}
+      </section>}
 
-      <Footer/>
+      {site.sections.testimonials.enabled && site.testimonials.some((item) => item.enabled) && <section className="testimonials section"><div className="section-intro"><div><h2>{site.sections.testimonials.title}</h2></div><p>{site.sections.testimonials.subtitle}</p></div><div className="testimonial-grid">{site.testimonials.filter((item) => item.enabled).map((item) => <article key={item.id}>{item.image && <img src={item.image} alt={item.name} loading="lazy"/>}<p>{"★".repeat(item.rating)}</p><blockquote>{item.content}</blockquote><strong>{item.name}</strong></article>)}</div></section>}
+
+      <Footer site={site}/>
       <ProductDetailModal product={selectedProduct} quantity={detailQty} setQuantity={setDetailQty} close={() => setSelectedProduct(null)} add={add} buyNow={buyNow} categoryOf={categoryOf} format={format} policies={policies}/>
       <CartDrawer open={cartOpen} count={count} products={products} cart={cart} subtotal={subtotal} close={() => setCartOpen(false)} update={update} checkout={() => location.assign("/thanh-toan")} format={format}/>
     </main>

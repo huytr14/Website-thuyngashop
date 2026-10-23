@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { getShopSettings, getStoreCatalog } from "@/db/store";
+import { getShopSettings, getSiteContent, getStoreCatalog } from "@/db/store";
 import CheckoutPage from "./CheckoutPage";
+import { pageMetadata } from "@/lib/site-metadata";
 
-export const metadata: Metadata = { title: "Thanh toán | THUYNGA Shop", robots: { index: false, follow: false }, openGraph: { title: "Thanh toán | THUYNGA Shop" } };
+export async function generateMetadata(): Promise<Metadata> { return { ...await pageMetadata("Thanh toán"), robots: { index: false, follow: false } }; }
 
 export default async function ThanhToanPage() {
-  const [catalog, settings] = await Promise.all([getStoreCatalog(), getShopSettings()]);
-  return <CheckoutPage products={catalog.products} settings={settings}/>;
+  const [catalog, settings, site] = await Promise.all([getStoreCatalog(), getShopSettings(), getSiteContent()]);
+  return <CheckoutPage products={catalog.products} settings={settings} site={site}/>;
 }

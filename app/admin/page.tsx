@@ -1,14 +1,16 @@
 import { hasAdminSession } from "@/app/admin-auth";
 import AdminDashboard from "./AdminDashboard";
 import styles from "./admin.module.css";
+import { getSiteContent } from "@/db/store";
 
 export default async function AdminPage({ searchParams }: { searchParams: Promise<{ error?: string; rate?: string }> }) {
   if (await hasAdminSession()) return <AdminDashboard />;
   const { error, rate } = await searchParams;
+  const site = await getSiteContent();
 
   return <main className={styles.loginPage}>
     <form className={styles.loginCard} action="/api/admin/login" method="post">
-      <a href="/" className={styles.loginLogo}><img src="/thuynga-logo-wine.png" alt="THUYNGA Shop"/></a>
+      <a href="/" className={styles.loginLogo}><img src={site.brand.logo} alt={site.brand.name}/></a>
       <p>TRANG QUẢN TRỊ</p>
       <h1>Đăng nhập</h1>
       <label>MẬT KHẨU<input name="password" type="password" required autoComplete="current-password" autoFocus/></label>
