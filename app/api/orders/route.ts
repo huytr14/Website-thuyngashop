@@ -1,4 +1,4 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { checkoutSchema } from "@/app/checkout-schema";
@@ -27,11 +27,12 @@ export async function POST(request: Request) {
     let result: { order: typeof storeOrders.$inferSelect; shopEmail: string } | undefined;
     for (let attempt = 0; attempt < 5 && !result; attempt++) try {
       result = await db.transaction(async (tx) => {
-      const products = await tx.select().from(storeProducts).where(inArray(storeProducts.id, input.data.items.map(({ productId }) => productId)));
+      const products = await tx.select().from(storeProducts).where(inArray(storeProducts.id, input.data.items.map(({ productId }) => productId))).orderBy(asc(storeProducts.id)).for("update");
       const settings = (await tx.select().from(storeShopSettings).where(eq(storeShopSettings.id, 1)).limit(1))[0] ?? defaultShopSettings;
+      const now = new Date();
       const lines = input.data.items.map((item) => ({ item, product: products.find(({ id }) => id === item.productId) }));
-      if (lines.some(({ item, product }) => !product?.published || !canBuy(product, item.variantName, item.quantity, input.data.items.filter((entry) => entry.productId === item.productId).reduce((sum, entry) => sum + entry.quantity, 0), settings))) throw new OrderInputError("Có sản phẩm hoặc biến thể không tồn tại, đã hết hàng");
-      const subtotal = lines.reduce((sum, { item, product }) => sum + pricedLine(product!, item.variantName, settings)!.price * item.quantity, 0);
+      if (lines.some(({ item, product }) => !product?.published || !canBuy(product, item.variantName, item.quantity, input.data.items.filter((entry) => entry.productId === item.productId).reduce((sum, entry) => sum + entry.quantity, 0), settings, now))) throw new OrderInputError("Có sản phẩm hoặc biến thể không tồn tại, đã hết hàng");
+      const subtotal = lines.reduce((sum, { item, product }) => sum + pricedLine(product!, item.variantName, settings, now)!.price * item.quantity, 0);
       const shipping = shippingFee(subtotal, settings.freeShippingThreshold, settings.standardShippingFee);
       const voucher = input.data.voucherCode ? (await tx.select().from(storeVouchers).where(eq(storeVouchers.code, input.data.voucherCode)).for("update").limit(1))[0] : undefined;
       const error = input.data.voucherCode ? voucherError(voucher as VoucherRule | undefined, subtotal) : null;
@@ -50,9 +51,17 @@ export async function POST(request: Request) {
       }).returning();
       await tx.insert(storeOrderItems).values(input.data.items.map((item) => {
         const product = products.find(({ id }) => id === item.productId)!;
-        const line = pricedLine(product, item.variantName, settings)!;
-        return { orderId: order.id, productId: product.id, productName: product.name, variantName: line.variantName, price: line.price, quantity: item.quantity };
+        const line = pricedLine(product, item.variantName, settings, now)!;
+        return { orderId: order.id, productId: product.id, productName: product.name, variantName: line.variantName, price: line.price, quantity: item.quantity, inventoryDeducted: product.trackInventory, flashStockDeducted: line.flashApplied && product.flashStock !== null };
       }));
+      for (const product of products) {
+        const ordered = input.data.items.filter((item) => item.productId === product.id);
+        const quantity = ordered.reduce((sum, item) => sum + item.quantity, 0);
+        const variantRows = product.variantRows.map((row) => ({ ...row, quantity: row.quantity - ordered.filter((item) => item.variantName === row.name).reduce((sum, item) => sum + item.quantity, 0) }));
+        const inventoryQuantity = product.trackInventory ? product.inventoryQuantity - quantity : product.inventoryQuantity;
+        const flashQuantity = ordered.filter((item) => pricedLine(product, item.variantName, settings, now)!.flashApplied).reduce((sum, item) => sum + item.quantity, 0);
+        await tx.update(storeProducts).set({ inventoryQuantity, variantRows: product.trackInventory ? variantRows : product.variantRows, flashStock: product.flashStock === null ? null : product.flashStock - flashQuantity, inStock: product.trackInventory ? inventoryQuantity > 0 && (!variantRows.length || variantRows.some((row) => row.quantity > 0)) : product.inStock }).where(eq(storeProducts.id, product.id));
+      }
       if (voucher) await tx.update(storeVouchers).set({ usedCount: sql`${storeVouchers.usedCount} + 1` }).where(eq(storeVouchers.id, voucher.id));
         return { order, shopEmail: settings.shopEmail };
       });

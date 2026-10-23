@@ -23,7 +23,7 @@ export default function Header({ menuOpen, searchOpen, query, count, setMenuOpen
   const searchHref = browseFromProduct ? `/?q=${encodeURIComponent(query.trim())}#deals` : "#deals";
   const visible = visibleCategories(categoryTree);
   return <>
-    {site.announcement.enabled && <div className="store-note"><span>{site.announcement.kicker}</span><span>{site.announcement.text}</span>{site.announcement.promo && <span>{site.announcement.promo}</span>}{site.announcement.link ? <a href={browseFromProduct && site.announcement.link.startsWith("#") ? `/${site.announcement.link}` : site.announcement.link}>{site.announcement.linkText} <ArrowUpRight size={13}/></a> : <span>{site.announcement.linkText}</span>}</div>}
+    {site.announcement.enabled && <div className="store-note"><span>{site.announcement.kicker}</span><span className="store-note-center">{site.announcement.text}{site.announcement.promo && <> · {site.announcement.promo}</>}</span>{site.announcement.link ? <a href={browseFromProduct && site.announcement.link.startsWith("#") ? `/${site.announcement.link}` : site.announcement.link}>{site.announcement.linkText} <ArrowUpRight size={13}/></a> : <span>{site.announcement.linkText}</span>}</div>}
     <header className="header">
       <button className="mobile-menu" onClick={() => setMenuOpen(!menuOpen)} aria-label="Mở menu"><Menu size={22}/></button>
       <nav className={menuOpen ? "nav open" : "nav"}>

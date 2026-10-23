@@ -8,7 +8,7 @@ import { CART_STORAGE_KEY, cartLines, parseCart, storeCart } from "@/lib/cart";
 import { visibleCategories, type ShopCategory } from "@/lib/categories";
 import { pricedLine } from "@/lib/product-pricing";
 
-export default function PublicMobileNav({ products, categories, flashSettings }: { products: Product[]; categories: ShopCategory[]; flashSettings: { flashSaleStart?: Date | string | null; flashSaleEnd?: Date | string | null } }) {
+export default function PublicMobileNav({ products, categories, flashSettings }: { products: Product[]; categories: ShopCategory[]; flashSettings: { flashSaleStart?: Date | string | null; flashSaleEnd?: Date | string | null; freeShippingThreshold?: number } }) {
   const [panel, setPanel] = useState<"categories" | "search" | "cart" | null>(null);
   const [query, setQuery] = useState("");
   const [cart, setCart] = useState<Record<string, number>>({});

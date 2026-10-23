@@ -13,7 +13,7 @@ import Footer from "@/components/storefront/Footer";
 import CartDrawer from "@/components/storefront/CartDrawer";
 import "./category.css";
 
-export default function CategoryPageClient({ category, categoryTree, products, allProducts, site, summaries, flashSettings }: { category: ShopCategory; categoryTree: ShopCategory[]; products: Product[]; allProducts: Product[]; site: SiteContent; summaries: Record<number, ReviewSummary>; flashSettings: { flashSaleStart?: Date | string | null; flashSaleEnd?: Date | string | null } }) {
+export default function CategoryPageClient({ category, categoryTree, products, allProducts, site, summaries, flashSettings }: { category: ShopCategory; categoryTree: ShopCategory[]; products: Product[]; allProducts: Product[]; site: SiteContent; summaries: Record<number, ReviewSummary>; flashSettings: { flashSaleStart?: Date | string | null; flashSaleEnd?: Date | string | null; freeShippingThreshold?: number } }) {
   const [brand, setBrand] = useState("");
   const [origin, setOrigin] = useState("");
   const [sort, setSort] = useState("newest");
@@ -43,12 +43,13 @@ export default function CategoryPageClient({ category, categoryTree, products, a
         <label><input type="checkbox" checked={inStockOnly} onChange={(event) => setInStockOnly(event.target.checked)}/> Chỉ còn hàng</label>
         <span>Có {filtered.length} sản phẩm</span><button type="button" onClick={() => { setBrand(""); setOrigin(""); setSort("newest"); setInStockOnly(false); }}>Đặt lại bộ lọc</button>
       </div>
-      <div className="category-products">{filtered.map((item) => <article key={item.id}>
+      <div className="category-products">{filtered.map((item) => <article className={item.inStock ? "" : "out-of-stock"} key={item.id}>
         <button type="button" className="card-wishlist" aria-label={wishlist.ids.includes(item.id) ? `Bỏ yêu thích ${item.name}` : `Yêu thích ${item.name}`} aria-pressed={wishlist.ids.includes(item.id)} onClick={() => void wishlist.toggle(item.id)}>{wishlist.ids.includes(item.id) ? "♥" : "♡"}</button>
-        <a href={`/san-pham/${item.slug}`}><img src={item.image} alt={item.name} loading="lazy"/><small>{item.brand}</small><h2>{item.name}</h2></a>
+        {(item.badge || (item.createdAt && Date.now() - new Date(item.createdAt).getTime() < 14 * 86400000)) && <span className="category-badge">{item.badge || "Mới"}</span>}{!item.inStock && <span className="sold-out-badge">Hết hàng</span>}
+        <a href={`/san-pham/${item.slug}`}><img src={item.image} alt={`${item.brand} ${item.name}`} loading="lazy"/><small>{item.brand}</small><h2>{item.name}</h2></a>
         {summaries[item.id] && <small>★ {summaries[item.id].average.toLocaleString("vi-VN")} ({summaries[item.id].count})</small>}
-        <strong>{item.variantRows?.length && !flashActive(flashSettings) ? "Từ " : ""}{formatPrice(price(item))}</strong>{!!item.soldCount && <small>Đã bán {item.soldCount.toLocaleString("vi-VN")}</small>}
-        {item.variantRows?.length ? <a href={`/san-pham/${item.slug}`}>Chọn biến thể</a> : <button type="button" disabled={!item.inStock} onClick={() => add(item.id)}>{item.inStock ? "Thêm vào giỏ" : "Hết hàng"}</button>}
+        <strong>{item.variantRows?.length && !flashActive(flashSettings) ? "Từ " : ""}{formatPrice(price(item))}</strong>{(flashActive(flashSettings) && item.flashPrice != null ? item.price : item.oldPrice) > price(item) && <small className="category-discount">-{Math.round((1 - price(item) / (flashActive(flashSettings) && item.flashPrice != null ? item.price : item.oldPrice)) * 100)}%</small>}{!!item.soldCount && <small>Đã bán {item.soldCount.toLocaleString("vi-VN")}</small>}
+        {item.variantRows?.length && item.inStock ? <a className="category-add" href={`/san-pham/${item.slug}`}>Chọn biến thể</a> : <button type="button" disabled={!item.inStock} onClick={() => add(item.id)}>{item.inStock ? "Thêm vào giỏ" : "Hết hàng"}</button>}
       </article>)}</div>{!filtered.length && <p>Chưa có sản phẩm phù hợp.</p>}
     </main>
     <Footer site={site}/><CartDrawer open={cartOpen} count={count} products={allProducts} cart={cart} subtotal={subtotal} close={() => setCartOpen(false)} update={update} checkout={() => location.assign("/thanh-toan")} format={formatPrice} flashSettings={flashSettings}/>

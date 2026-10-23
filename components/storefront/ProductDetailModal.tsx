@@ -23,7 +23,7 @@ export default function ProductDetailModal({ product, quantity, setQuantity, clo
   return <div className="overlay product-overlay" onMouseDown={close}>
     <section className="product-detail" onMouseDown={(e) => e.stopPropagation()} aria-modal="true" role="dialog" aria-label={`Chi tiết ${product.name}`}>
       <button className="detail-close" onClick={close} aria-label="Đóng">×</button>
-      <div className="detail-image"><img src={product.image} alt={product.name}/></div>
+      <div className="detail-image"><img src={product.image} alt={`${product.brand} ${product.name}`}/></div>
       <div className="detail-copy">
         <div className="breadcrumb">TRANG CHỦ / SẢN PHẨM / {product.brand}</div>
         <p className="eyebrow">{product.brand}</p>

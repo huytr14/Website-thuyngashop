@@ -1,0 +1,2 @@
+ALTER TABLE "order_items" ADD COLUMN "inventory_deducted" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE "order_items" ADD COLUMN "flash_stock_deducted" boolean DEFAULT false NOT NULL;

@@ -60,6 +60,7 @@ export async function getStoreCatalog(): Promise<{ products: Product[]; categori
         variantRows: storeProducts.variantRows,
         flashPrice: storeProducts.flashPrice,
         flashStock: storeProducts.flashStock,
+        createdAt: storeProducts.createdAt,
         seoTitle: storeProducts.seoTitle,
         seoDescription: storeProducts.seoDescription,
         badge: storeProducts.badge,
@@ -71,14 +72,14 @@ export async function getStoreCatalog(): Promise<{ products: Product[]; categori
       db.execute(sql`select oi.product_id as "productId", sum(oi.quantity)::int as "soldCount" from order_items oi join orders o on o.id = oi.order_id where o.status <> 'HUY' group by oi.product_id`),
     ]);
 
-    const sold = new Map((soldRows.rows as { productId: number; soldCount: number }[]).map((row) => [row.productId, row.soldCount]));
+    const sold = new Map(((soldRows.rows ?? soldRows) as { productId: number; soldCount: number }[]).map((row) => [row.productId, row.soldCount]));
     const mediaImages = await db.select({ id: storeMedia.id, url: storeMedia.url }).from(storeMedia);
     const mediaById = new Map(mediaImages.map((item) => [item.id, item.url]));
     const tree = categoryRows.map((item) => ({ ...item, image: item.imageMediaId ? mediaById.get(item.imageMediaId) ?? "" : "" }));
     const visible = visibleCategories(tree);
     const ids = new Set(visible.map((item) => item.id));
     return {
-      products: productRows.filter((product) => product.categoryId && ids.has(product.categoryId)).map((product) => { const images = mediaRows.filter((item) => item.productId === product.id).map((item) => item.url); return { ...product, description: sanitizeRichText(product.description), image: images[0] ?? product.image, extraImages: images.length ? images.slice(1) : product.extraImages, badge: product.badge ?? undefined, soldCount: sold.get(product.id) ?? 0 }; }),
+      products: productRows.filter((product) => product.categoryId && ids.has(product.categoryId)).map((product) => { const images = mediaRows.filter((item) => item.productId === product.id).map((item) => item.url); return { ...product, createdAt: product.createdAt ?? undefined, description: sanitizeRichText(product.description), image: images[0] ?? product.image, extraImages: images.length ? images.slice(1) : product.extraImages, badge: product.badge ?? undefined, soldCount: sold.get(product.id) ?? 0 }; }),
       categories: ["Tất cả", ...visible.filter(({ parentId }) => !parentId).map(({ name }) => name)],
       categoryTree: tree,
     };

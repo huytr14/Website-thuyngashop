@@ -73,7 +73,7 @@ test("wishlist vãng lai hợp nhất vào tài khoản và mobile không tràn 
   } finally { await sql`delete from users where email = ${email}`; await sql.end(); }
 });
 
-test("flash áp giá thật; admin sửa nhanh, sửa hàng loạt và doanh thu", async ({ page }) => {
+test("flash áp giá thật; admin sửa nhanh, sửa hàng loạt và doanh thu", async ({ page }, testInfo) => {
   const sql = postgres(process.env.DATABASE_URL!, { prepare: false });
   const email = `flash-${Date.now()}@example.com`;
   const [settings] = await sql`select flash_sale_title, flash_sale_start, flash_sale_end from shop_settings where id = 1`;
@@ -87,6 +87,10 @@ test("flash áp giá thật; admin sửa nhanh, sửa hàng loạt và doanh thu
     await expect(page.locator(".flash-sale")).toContainText("Flash kiểm thử");
     await expect(page.locator(".flash-sale")).toContainText("99.000₫");
     await expect(page.locator(".flash-sale progress")).toHaveCount(1);
+    await expect(page.locator(".flash-countdown span")).toHaveCount(3);
+    await expect(page.locator(".flash-progress small")).toContainText("Đã bán");
+    expect(await page.locator(".flash-sale .card-wishlist").first().evaluate((button) => button.getBoundingClientRect().width)).toBe(44);
+    await page.locator(".flash-sale").screenshot({ path: testInfo.outputPath("flash-sale.png") });
     const quote = await page.request.post("/api/checkout/quote", { data: { items: [{ productId: product.id, quantity: 1 }], voucherCode: "" } });
     expect((await quote.json()).subtotal).toBe(99000);
     const order = await page.request.post("/api/orders", { headers: { "Idempotency-Key": crypto.randomUUID() }, data: { customerName: "Khách Flash", email, phone: "0901234567", address: "123 Đường Kiểm Thử", city: "TP Hồ Chí Minh", district: "Quận 1", paymentMethod: "COD", items: [{ productId: product.id, quantity: 1 }] } });

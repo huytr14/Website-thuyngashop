@@ -75,6 +75,7 @@ export const storeProducts = pgTable("products", {
   seoTitle: text("seo_title").notNull().default(""),
   seoDescription: text("seo_description").notNull().default(""),
   badge: varchar("badge", { length: 50 }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   categoryId: integer("category_id").references(() => storeCategories.id),
 });
 
@@ -127,6 +128,8 @@ export const storeOrderItems = pgTable("order_items", {
   variantName: text("variant_name"),
   price: integer("price").notNull(),
   quantity: integer("quantity").notNull(),
+  inventoryDeducted: boolean("inventory_deducted").notNull().default(false),
+  flashStockDeducted: boolean("flash_stock_deducted").notNull().default(false),
 });
 
 export const storeShopSettings = pgTable("shop_settings", {

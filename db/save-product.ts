@@ -18,7 +18,8 @@ export async function saveProduct(input: ProductInput, id?: number) {
       const baseSlug = values.slug || slugify(values.name) || `san-pham-${crypto.randomUUID().slice(0, 8)}`;
       let slug = baseSlug;
       if (!id && !slugCustom) for (let suffix = 2; (await tx.select({ id: storeProducts.id }).from(storeProducts).where(eq(storeProducts.slug, slug)).limit(1)).length; suffix++) slug = `${baseSlug}-${suffix}`;
-      const row = { ...values, slug, image, extraImages, inStock: values.trackInventory ? values.variantRows.length ? values.variantRows.some((variant) => variant.quantity > 0) : values.inventoryQuantity > 0 : values.inStock };
+      const inventoryQuantity = values.trackInventory && values.variantRows.length ? values.variantRows.reduce((sum, variant) => sum + variant.quantity, 0) : values.inventoryQuantity;
+      const row = { ...values, slug, image, extraImages, inventoryQuantity, inStock: values.trackInventory ? inventoryQuantity > 0 : values.inStock };
       const [product] = id ? await tx.update(storeProducts).set(row).where(eq(storeProducts.id, id)).returning() : await tx.insert(storeProducts).values(row).returning();
       if (!product) throw new Error("Không tìm thấy sản phẩm");
       await tx.delete(storeProductMedia).where(eq(storeProductMedia.productId, product.id));

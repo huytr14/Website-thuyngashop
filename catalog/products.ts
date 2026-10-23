@@ -32,6 +32,7 @@ export type Product = {
   variantRows?: { name: string; price: number; quantity: number; image?: string }[];
   trackInventory?: boolean;
   flashPrice?: number | null; flashStock?: number | null; soldCount?: number;
+  createdAt?: Date;
 };
 
 // Catalog và ảnh đều là minh họa; đối chiếu nhãn, giá, nguồn gốc và HSD trước khi đăng bán.
