@@ -15,6 +15,8 @@ type ProductGridProps = {
   filtered: Product[];
   visibleProducts: Product[];
   showAllProducts: boolean;
+  underMillion: boolean;
+  setUnderMillion: (active: boolean) => void;
   setCategory: (category: string) => void;
   setSort: (sort: string) => void;
   setShowAllProducts: (show: boolean) => void;
@@ -51,7 +53,7 @@ export function ProductCard({ product: p, summary, flashSettings = {}, format, l
   </article>;
 }
 
-export default function ProductGrid({ categories, category, sort, query, filtered, visibleProducts, showAllProducts, setCategory, setSort, setShowAllProducts, openProduct, buyNow, add, format, reviewSummaries, section = defaultSiteContent.sections.deals, flashSettings = {} }: ProductGridProps) {
+export default function ProductGrid({ categories, category, sort, query, filtered, visibleProducts, showAllProducts, underMillion, setUnderMillion, setCategory, setSort, setShowAllProducts, openProduct, buyNow, add, format, reviewSummaries, section = defaultSiteContent.sections.deals, flashSettings = {} }: ProductGridProps) {
   const wishlist = useWishlist();
   return <section className="products section product-first" id="deals">
     <div className="shop-heading">
@@ -59,7 +61,8 @@ export default function ProductGrid({ categories, category, sort, query, filtere
     </div>
     <div className="catalog-toolbar">
       <Tabs value={category} onValueChange={setCategory}><TabsList className="catalog-tabs" aria-label="Danh mục sản phẩm">{categories.map((name) => <TabsTrigger key={name} value={name}>{name}</TabsTrigger>)}</TabsList></Tabs>
-      <div className="catalog-sort"><span>{filtered.length} sản phẩm</span><label>Sắp xếp <select value={sort} onChange={(e) => setSort(e.target.value)}><option value="featured">Nổi bật</option><option value="price-asc">Giá thấp đến cao</option><option value="price-desc">Giá cao đến thấp</option></select></label></div>
+      <div className="catalog-quick-filters"><button type="button" aria-pressed={sort === "newest"} onClick={() => setSort(sort === "newest" ? "featured" : "newest")}>Mới nhất</button><button type="button" aria-pressed={underMillion} onClick={() => setUnderMillion(!underMillion)}>Dưới 1 triệu</button></div>
+      <div className="catalog-sort"><span>{filtered.length} sản phẩm</span><label>Sắp xếp <select value={sort} onChange={(e) => setSort(e.target.value)}><option value="featured">Nổi bật</option><option value="newest">Mới nhất</option><option value="price-asc">Giá thấp đến cao</option><option value="price-desc">Giá cao đến thấp</option></select></label></div>
     </div>
     <div className="product-grid">
       {visibleProducts.map((p) => <ProductCard key={p.id} product={p} summary={reviewSummaries[p.id]} flashSettings={flashSettings} format={format} liked={wishlist.ids.includes(p.id)} toggleLiked={() => void wishlist.toggle(p.id)} buyNow={() => buyNow(p.id)} add={() => add(p.id)} openProduct={() => openProduct(p)}/>) }

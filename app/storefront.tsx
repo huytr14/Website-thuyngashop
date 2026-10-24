@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ArrowUpRight, BadgeCheck, Headphones, RotateCcw, ShoppingBag, Truck } from "lucide-react";
+import { ArrowUpRight, BadgeCheck, Headphones, RotateCcw, Truck } from "lucide-react";
 import CartDrawer from "@/components/storefront/CartDrawer";
 import Footer from "@/components/storefront/Footer";
 import Header from "@/components/storefront/Header";
@@ -30,6 +30,7 @@ export default function Storefront({ products, categories, categoryTree, reviewS
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [category, setCategory] = useState("Tất cả");
   const [sort, setSort] = useState("featured");
+  const [underMillion, setUnderMillion] = useState(false);
   const [detailQty, setDetailQty] = useState(1);
   const [heroIndex, setHeroIndex] = useState(0);
   const [showAllProducts, setShowAllProducts] = useState(false);
@@ -39,7 +40,6 @@ export default function Storefront({ products, categories, categoryTree, reviewS
   useEffect(() => { setNow(Date.now()); const timer = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(timer); }, []);
   const flashProducts = flashActive(flashSettings, new Date(now)) ? products.filter((item) => item.flashPrice != null && (item.flashStock == null || item.flashStock > 0)) : [];
   const secondsLeft = Math.max(0, Math.floor((new Date(flashSettings.flashSaleEnd ?? 0).getTime() - now) / 1000));
-  const cardPrice = (item: Product) => flashActive(flashSettings) && item.flashPrice != null ? item.flashPrice : item.price;
   const roots = visibleCategories(categoryTree).filter(({ parentId }) => !parentId);
 
   useEffect(() => {
@@ -56,15 +56,26 @@ export default function Storefront({ products, categories, categoryTree, reviewS
   const categoryOf = (product: Product) => product.category;
   const filtered = products.filter((p) =>
     `${p.brand} ${p.name}`.toLowerCase().includes(query.trim().toLowerCase()) &&
+    (!underMillion || p.price < 1000000) &&
     (!brandFilter || p.brand.toLocaleLowerCase("vi-VN") === brandFilter.toLocaleLowerCase("vi-VN")) &&
     (category === "Tất cả" || categoryDescendants(roots.find((item) => item.name === category)!, categoryTree).includes(p.categoryId ?? -1))
-  ).sort((a, b) => sort === "price-asc" ? a.price - b.price : sort === "price-desc" ? b.price - a.price : a.id - b.id);
+  ).sort((a, b) => sort === "price-asc" ? a.price - b.price : sort === "price-desc" ? b.price - a.price : sort === "newest" ? new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime() || b.id - a.id : a.id - b.id);
   const count = Object.values(cart).reduce((a, b) => a + b, 0);
   const subtotal = useMemo(
     () => cartLines(cart, products).reduce((sum, { product, variantName, quantity }) => sum + (pricedLine(product, variantName, flashSettings)?.price ?? product.price) * quantity, 0),
     [cart, products, flashSettings]
   );
   const visibleProducts = filtered.slice(0, showAllProducts || query ? undefined : 12);
+  const shownIds = new Set(site.sections.deals.enabled ? visibleProducts.slice(0, 12).map(({ id }) => id) : []);
+  const departmentRails = site.departmentRails.filter((rail) => rail.enabled).slice(0, 2).flatMap((rail) => {
+    const root = roots.find((item) => item.slug === rail.categorySlug);
+    if (!root) return [];
+    const ids = categoryDescendants(root, categoryTree);
+    const items = products.filter((item) => ids.includes(item.categoryId ?? -1) && !shownIds.has(item.id)).slice(0, 8);
+    if (items.length < 4) return [];
+    items.forEach((item) => shownIds.add(item.id));
+    return [{ rail, root, items }];
+  });
 
   const add = (id: number, quantity = 1) => {
     if (products.find((item) => item.id === id)?.variantRows?.length) return location.assign(`/san-pham/${products.find((item) => item.id === id)!.slug}`);
@@ -95,55 +106,26 @@ export default function Storefront({ products, categories, categoryTree, reviewS
       <Hero heroIndex={heroIndex} setHeroIndex={setHeroIndex} slides={site.hero}/>
       {site.sections.benefits.enabled && <section className="benefits benefits-hero">{site.home.benefits.map((item, index) => <div key={index}>{[<BadgeCheck size={26}/>, <Truck size={26}/>, <RotateCcw size={26}/>, <Headphones size={26}/>][index]}<h3>{item.title}</h3><p>{item.description}</p></div>)}</section>}
       {flashProducts.length > 0 && <section className="flash-sale section"><div className="flash-heading"><div><span className="section-overline">ƯU ĐÃI CÓ THỜI HẠN</span><h2>{flashSettings.flashSaleTitle || "Flash Sale"}</h2></div><div className="flash-countdown" role="timer" aria-label="Thời gian còn lại"><span>{String(Math.floor(secondsLeft / 3600)).padStart(2, "0")}</span><b>:</b><span>{String(Math.floor(secondsLeft / 60) % 60).padStart(2, "0")}</span><b>:</b><span>{String(secondsLeft % 60).padStart(2, "0")}</span></div></div><div className="product-grid">{flashProducts.map((item) => <ProductCard key={item.id} product={item} summary={reviewSummaries[item.id]} flashSettings={flashSettings} format={format} liked={wishlist.ids.includes(item.id)} toggleLiked={() => void wishlist.toggle(item.id)} buyNow={() => buyNow(item.id)} add={() => add(item.id)} openProduct={() => openProduct(item)} showProgress/>)}</div></section>}
-      {site.sections.deals.enabled && <ProductGrid categories={categories} category={category} sort={sort} query={query} filtered={filtered} visibleProducts={visibleProducts} showAllProducts={showAllProducts} setCategory={setCategory} setSort={setSort} setShowAllProducts={setShowAllProducts} openProduct={openProduct} buyNow={buyNow} add={add} format={format} reviewSummaries={reviewSummaries} section={site.sections.deals} flashSettings={flashSettings}/>}
-
-      {site.sections.feature.enabled && <section className="feature-banner">
-        <div><p>THUYNGA SHOP · HÀNG NHẬP KHẨU</p><h2>{site.sections.feature.title.split("\n")[0]}<br/><em>{site.sections.feature.title.split("\n").slice(1).join(" ")}</em></h2><span>{site.sections.feature.subtitle}</span><a href="#new-arrivals">KHÁM PHÁ THÊM <ArrowUpRight size={16}/></a></div>
-        <img src={site.home.featureImage || defaultSiteContent.home.featureImage} alt="Hàng nhập khẩu chọn lọc" loading="lazy"/>
-      </section>}
+      {site.sections.deals.enabled && <ProductGrid categories={categories} category={category} sort={sort} query={query} filtered={filtered} visibleProducts={visibleProducts} showAllProducts={showAllProducts} underMillion={underMillion} setUnderMillion={setUnderMillion} setCategory={setCategory} setSort={setSort} setShowAllProducts={setShowAllProducts} openProduct={openProduct} buyNow={buyNow} add={add} format={format} reviewSummaries={reviewSummaries} section={site.sections.deals} flashSettings={flashSettings}/>}
 
       {site.sections.categories.enabled && <section className="category-section section" id="categories">
         <div className="section-intro"><div><span className="section-overline">02 / MUA SẮM THEO NHU CẦU</span><h2>{site.sections.categories.title}</h2></div><p>{site.sections.categories.subtitle}</p></div>
         <div className="beauty-categories">{roots.map((root, index) => <a className="beauty-category" href={`/danh-muc/${root.slug}`} key={root.id}><img src={root.image || `/category-${index + 1}.svg`} alt={root.name} loading="lazy"/><span>{String(index + 1).padStart(2, "0")} / DANH MỤC</span><strong>{root.name}</strong><ArrowUpRight size={23}/></a>)}</div>
       </section>}
 
-      {site.departmentRails.filter((rail) => rail.enabled).map((rail) => { const root = roots.find((item) => item.slug === rail.categorySlug); if (!root) return null; const ids = categoryDescendants(root, categoryTree); const items = products.filter((item) => ids.includes(item.categoryId ?? -1)).slice(0, 8); return <section className="department-rail section" key={rail.categorySlug}><div className="section-heading"><div><span className="section-overline">SẢN PHẨM THEO NGÀNH</span><h2>{rail.title}</h2></div><a href={`/danh-muc/${root.slug}`}>Xem tất cả <ArrowUpRight size={15}/></a></div><div className="product-grid">{items.map((item) => <article className="product" key={item.id}><button type="button" className="card-wishlist" aria-label={wishlist.ids.includes(item.id) ? `Bỏ yêu thích ${item.name}` : `Yêu thích ${item.name}`} aria-pressed={wishlist.ids.includes(item.id)} onClick={() => void wishlist.toggle(item.id)}>{wishlist.ids.includes(item.id) ? "♥" : "♡"}</button><a className="image-open" href={`/san-pham/${item.slug}`}><div className="product-image"><img src={item.image} alt={`${item.brand} ${item.name}`} loading="lazy"/></div></a><p className="product-brand">{item.brand}</p><h3><a className="product-link" href={`/san-pham/${item.slug}`}>{item.name}</a></h3><div className="price"><strong>{format(cardPrice(item))}</strong></div>{!!item.soldCount && <small>Đã bán {item.soldCount.toLocaleString("vi-VN")}</small>}</article>)}</div></section>; })}
-
-      {site.sections.newProducts.enabled && <section className="new-products section" id="new-arrivals">
-        <div className="section-heading">
-          <div><span className="section-overline">03 / GỢI Ý CHO BẠN</span><h2>{site.sections.newProducts.title}</h2><p>{site.sections.newProducts.subtitle}</p></div>
-          <a href="#deals" onClick={() => setShowAllProducts(true)}>Xem tất cả <ArrowUpRight size={15}/></a>
-        </div>
-        <div className="new-grid">
-          {products.slice(16, 24).map((p, index) => <article className="new-card" key={p.id}>
-            <button type="button" className="card-wishlist" aria-label={wishlist.ids.includes(p.id) ? `Bỏ yêu thích ${p.name}` : `Yêu thích ${p.name}`} aria-pressed={wishlist.ids.includes(p.id)} onClick={() => void wishlist.toggle(p.id)}>{wishlist.ids.includes(p.id) ? "♥" : "♡"}</button>
-            <div className="new-index">0{index + 1}</div>
-            <a className="new-image-open" href={`/san-pham/${p.slug}`} aria-label={`Xem chi tiết ${p.name}`}><img src={p.image} alt={`${p.brand} ${p.name}`} loading="lazy"/></a>
-            <div><p>{p.brand}</p><h3><a className="product-link" href={`/san-pham/${p.slug}`}>{p.name}</a></h3>{reviewSummaries[p.id] && <p className="product-rating">★ {reviewSummaries[p.id].average.toLocaleString("vi-VN")} ({reviewSummaries[p.id].count})</p>}<strong>{format(cardPrice(p))}</strong>{!!p.soldCount && <small>Đã bán {p.soldCount.toLocaleString("vi-VN")}</small>}<button onClick={() => add(p.id)} aria-label={`Thêm ${p.name} vào túi`}><ShoppingBag size={16}/></button></div>
-          </article>)}
-        </div>
+      {site.sections.feature.enabled && <section className="feature-banner">
+        <div><p>THUYNGA SHOP · HÀNG NHẬP KHẨU</p><h2>{site.sections.feature.title.split("\n")[0]}<br/><em>{site.sections.feature.title.split("\n").slice(1).join(" ")}</em></h2><span>{site.sections.feature.subtitle}</span><a href="#deals">KHÁM PHÁ THÊM <ArrowUpRight size={16}/></a></div>
+        <img src={site.home.featureImage || defaultSiteContent.home.featureImage} alt="Hàng nhập khẩu chọn lọc" loading="lazy"/>
       </section>}
 
-      {site.sections.priceEdit.enabled && <section className="price-edit section" id="under-million">
-        <div className="section-heading">
-          <div><span className="section-overline">04 / DỄ BẮT ĐẦU</span><h2>{site.sections.priceEdit.title}</h2><p>{site.sections.priceEdit.subtitle}</p></div>
-          <a href="#deals" onClick={() => { setShowAllProducts(true); setSort("price-asc"); }}>Khám phá tất cả <ArrowUpRight size={15}/></a>
-        </div>
-        <div className="price-edit-grid">
-          {products.filter((p) => p.price < 1000000).slice(0, 6).map((p) => <article className="price-edit-card" key={p.id}>
-            <button type="button" className="card-wishlist" aria-label={wishlist.ids.includes(p.id) ? `Bỏ yêu thích ${p.name}` : `Yêu thích ${p.name}`} aria-pressed={wishlist.ids.includes(p.id)} onClick={() => void wishlist.toggle(p.id)}>{wishlist.ids.includes(p.id) ? "♥" : "♡"}</button>
-            <a className="price-edit-image" href={`/san-pham/${p.slug}`} aria-label={`Xem chi tiết ${p.name}`}><img src={p.image} alt={`${p.brand} ${p.name}`} loading="lazy"/></a>
-            <div><small>{p.brand}</small><h3><a className="product-link" href={`/san-pham/${p.slug}`}>{p.name}</a></h3>{reviewSummaries[p.id] && <p className="product-rating">★ {reviewSummaries[p.id].average.toLocaleString("vi-VN")} ({reviewSummaries[p.id].count})</p>}<strong>{format(cardPrice(p))}</strong>{!!p.soldCount && <small>Đã bán {p.soldCount.toLocaleString("vi-VN")}</small>}<button className="price-edit-buy" onClick={() => buyNow(p.id)}>MUA NGAY <ArrowUpRight size={13}/></button></div>
-          </article>)}
-        </div>
-      </section>}
+      {departmentRails.map(({ rail, root, items }) => <section className="department-rail section" key={root.slug}><div className="section-heading"><div><span className="section-overline">SẢN PHẨM THEO NGÀNH</span><h2>{rail.title}</h2></div><a href={`/danh-muc/${root.slug}`}>Xem tất cả <ArrowUpRight size={15}/></a></div><div className="product-grid">{items.map((item) => <ProductCard key={item.id} product={item} summary={reviewSummaries[item.id]} flashSettings={flashSettings} format={format} liked={wishlist.ids.includes(item.id)} toggleLiked={() => void wishlist.toggle(item.id)} buyNow={() => buyNow(item.id)} add={() => add(item.id)} openProduct={() => openProduct(item)}/>)}</div></section>)}
 
       {site.sections.brandStrip.enabled && <section className="brand-strip" aria-label="Các thương hiệu đang bán"><p>{site.sections.brandStrip.title}</p><div>{[...new Set(products.map((item) => item.brand).filter(Boolean))].map((brand) => <a href={`/?brand=${encodeURIComponent(brand)}#deals`} key={brand}>{brand}</a>)}</div></section>}
 
       {site.sections.journal.enabled && <section className="journal section">
         <div className="section-intro"><div><span className="section-overline">05 / KHÁM PHÁ THÊM</span><h2>{site.sections.journal.title}</h2></div><p>{site.sections.journal.subtitle}</p></div>
         <div className="journal-grid">
-          {site.home.journal.map((item, index) => <a key={index} href={roots[index] ? `/danh-muc/${roots[index].slug}` : "#deals"}><img src={item.image || defaultSiteContent.home.journal[index].image} alt={item.title} loading="lazy"/><span>{item.label}</span><h3>{item.title}</h3><small>{item.linkText} <ArrowUpRight size={14}/></small></a>)}
+          {site.home.journal.map((item, index) => <a key={index} href="/tin-tuc"><img src={item.image || defaultSiteContent.home.journal[index].image} alt={item.title} loading="lazy"/><span>{item.label}</span><h3>{item.title}</h3><small>{item.linkText} <ArrowUpRight size={14}/></small></a>)}
         </div>
       </section>}
 

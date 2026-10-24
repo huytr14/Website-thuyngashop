@@ -6,7 +6,7 @@ import { defaultSiteContent, type SiteContent } from "@/lib/site-content";
 import "./site.css";
 
 type SectionKey = keyof SiteContent["sections"];
-const sectionNames: Record<SectionKey, string> = { deals: "Sản phẩm nổi bật", feature: "Banner giới thiệu", categories: "Danh mục", newProducts: "Gợi ý cho bạn", priceEdit: "Dưới 1 triệu", brandStrip: "Thanh nhu cầu", journal: "Cảm hứng", benefits: "Lợi ích", testimonials: "Cảm nhận khách hàng" };
+const sectionNames: Record<SectionKey, string> = { deals: "Sản phẩm nổi bật", feature: "Banner giới thiệu", categories: "Danh mục", brandStrip: "Thanh nhu cầu", journal: "Cảm hứng", benefits: "Lợi ích", testimonials: "Cảm nhận khách hàng" };
 const socialNames = { facebook: "Facebook", instagram: "Instagram", zalo: "Zalo", messenger: "Messenger", tiktok: "TikTok", youtube: "YouTube" } as const;
 const newSlide = (): SiteContent["hero"][number] => ({ id: crypto.randomUUID(), image: "", title: "", accent: "", description: "", buttonText: "", buttonLink: "", imageLabel: "", enabled: true });
 
