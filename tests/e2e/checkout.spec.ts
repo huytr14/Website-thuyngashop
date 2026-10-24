@@ -32,7 +32,7 @@ test("xem sản phẩm, thêm giỏ, đặt COD và thấy đơn trong admin", a
   await page.goto("/admin");
   await page.getByLabel("MẬT KHẨU").fill(process.env.ADMIN_PASSWORD!);
   await page.getByRole("button", { name: "ĐĂNG NHẬP" }).click();
-  await page.getByRole("button", { name: /Đơn hàng/ }).click();
+  await page.getByRole("link", { name: /Đơn hàng/ }).click();
   await expect(page.getByText(code!, { exact: true })).toBeVisible();
 
 });

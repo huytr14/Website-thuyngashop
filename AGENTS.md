@@ -33,5 +33,8 @@ Catalog mẫu đa ngành nằm ở `catalog/products.ts`; dữ liệu vận hàn
 - **Chỉ tham khảo pattern, không copy nguyên dự án:** `vercel/commerce` (storefront App Router/RSC/Server Actions/SEO — bỏ qua backend Shopify của nó), template ecommerce của `payloadcms/payload` (mô hình dữ liệu + admin mẫu), examples chính thức trong `vercel/next.js`, `resend/react-email` (email đơn hàng, P2), `nextauthjs/next-auth` (tài khoản khách, P2–P3), `lehuygiang28/vnpay` (VNPAY, chỉ giai đoạn cổng thanh toán, phải đối chiếu tài liệu VNPAY chính thức).
 - **Cấm tự ý dùng:** Medusa, Saleor, các template Stripe/nền tảng trả phí, template cộng đồng không rõ giấy phép — trừ khi có lệnh mới rõ ràng.
 
+## Tiền lệ tham chiếu mã nguồn mở (Lệnh 17)
+- Được clone repo mã nguồn mở vào thư mục ngoài dự án để đọc pattern và chuyển thể component theo đúng giấy phép, có ghi nguồn/attribution khi chuyển thể code. Riêng shadcn/ui được lấy source component thực sự dùng; Medusa, Saleor và Payload chỉ tham khảo pattern, không dùng chúng làm nền tảng hay copy nguyên dự án. Cấm dùng nguyên nền tảng/template bị cấm khác và cấm commit thư mục clone vào dự án.
+
 ## Báo cáo sau mỗi nhiệm vụ
 Liệt kê: file đã thêm/sửa, thay đổi schema (nếu có), lệnh đã chạy và kết quả `npm run build`, việc còn tồn. Không tự commit/push trừ khi được yêu cầu.

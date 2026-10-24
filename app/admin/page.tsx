@@ -4,7 +4,7 @@ import styles from "./admin.module.css";
 import { getSiteContent } from "@/db/store";
 
 export default async function AdminPage({ searchParams }: { searchParams: Promise<{ error?: string; rate?: string }> }) {
-  if (await hasAdminSession()) return <AdminDashboard />;
+  if (await hasAdminSession()) { const site = await getSiteContent(); return <AdminDashboard brand={site.brand}/>; }
   const { error, rate } = await searchParams;
   const site = await getSiteContent();
 

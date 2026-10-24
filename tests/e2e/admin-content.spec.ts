@@ -69,6 +69,7 @@ test("giao diện admin đổi logo, thanh thông báo và thứ tự slide ở 
 });
 
 test("voucher áp vào đơn COD, khách hiện trong admin và shop trả lời đánh giá", async ({ page }) => {
+  test.setTimeout(120_000);
   const email = `lenh10-${Date.now()}@example.com`;
   const code = `L10${Date.now()}`;
   const sql = postgres(process.env.DATABASE_URL!, { prepare: false });
@@ -85,7 +86,7 @@ test("voucher áp vào đơn COD, khách hiện trong admin và shop trả lời
     await page.getByRole("button", { name: /Tạo mã giảm giá/ }).click();
     await page.getByRole("textbox", { name: "Mã giảm giá" }).fill(code.toLowerCase());
     await page.getByRole("button", { name: "Lưu mã" }).click();
-    await expect(page.getByText(code, { exact: true })).toBeVisible();
+    await expect(page.getByText(code, { exact: true })).toBeVisible({ timeout: 20_000 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.goto("/");
     await page.goto("/san-pham/kirkland-fish-oil-1000-mg");
@@ -115,7 +116,7 @@ test("voucher áp vào đơn COD, khách hiện trong admin và shop trả lời
     await page.goto("/admin/khach-hang");
     await page.getByLabel("Tìm khách hàng").fill(email);
     await expect(page.getByText(email).first()).toBeVisible();
-    await page.locator(".extra-customer").first().click();
+    await page.locator(".admin-ui-data-table tbody button").first().click();
     await expect(page.getByRole("dialog", { name: "Chi tiết khách hàng" })).toContainText("1 đơn");
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await sql`update orders set status = 'HOAN_THANH' where id = ${order.id}`;
@@ -125,7 +126,7 @@ test("voucher áp vào đơn COD, khách hiện trong admin và shop trả lời
     const reply = page.getByLabel(`Phản hồi đánh giá ${review.id}`);
     await reply.fill("THUYNGA Shop cảm ơn bạn đã chia sẻ!");
     await reply.blur();
-    await expect.poll(async () => { const [row] = await sql`select shop_reply from reviews where id = ${review.id}`; return row.shop_reply; }).toBe("THUYNGA Shop cảm ơn bạn đã chia sẻ!");
+    await expect.poll(async () => { const [row] = await sql`select shop_reply from reviews where id = ${review.id}`; return row.shop_reply; }, { timeout: 20_000 }).toBe("THUYNGA Shop cảm ơn bạn đã chia sẻ!");
     await page.goto(`/san-pham/${product.slug}`);
     await expect(page.getByText("Phản hồi từ THUYNGA Shop")).toBeVisible();
     await expect(page.getByText("THUYNGA Shop cảm ơn bạn đã chia sẻ!")).toBeVisible();

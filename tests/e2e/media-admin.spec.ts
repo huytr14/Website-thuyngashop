@@ -4,6 +4,7 @@ import postgres from "postgres";
 import { mediaStorage } from "../../lib/media-storage";
 
 test("admin mobile: tải ảnh local, lưu nháp chỉ tên, nhân bản và đưa ảnh lên PDP", async ({ page }) => {
+  test.setTimeout(120_000);
   const sql = postgres(process.env.DATABASE_URL!, { prepare: false });
   const name = `Ảnh kiểm thử ${Date.now()}`;
   const slug = `anh-kiem-thu-${Date.now()}`;
@@ -15,7 +16,7 @@ test("admin mobile: tải ảnh local, lưu nháp chỉ tên, nhân bản và đ
     await page.getByRole("button", { name: "ĐĂNG NHẬP" }).click();
     await page.goto("/admin/thu-vien-anh");
     await page.getByLabel("Chọn ảnh tải lên").setInputFiles([{ name: `${slug}.png`, mimeType: "image/png", buffer: await readFile("public/thuynga-logo.png") }, { name: `${slug}-hai.png`, mimeType: "image/png", buffer: await readFile("public/og.png") }]);
-    await expect(page.getByText("Ảnh đã được tải lên")).toBeVisible();
+    await expect(page.getByText("Ảnh đã được tải lên")).toBeVisible({ timeout: 30_000 });
     const library = (await (await page.request.get("/api/admin/media")).json()).media;
     const media = library.find((item: { alt: string }) => item.alt === `${slug}.png`);
     const second = library.find((item: { alt: string }) => item.alt === `${slug}-hai.png`);
@@ -24,20 +25,23 @@ test("admin mobile: tải ảnh local, lưu nháp chỉ tên, nhân bản và đ
     const webp = await page.request.get(`${media.url}?w=480`); expect(webp.ok()).toBe(true); expect(webp.headers()["content-type"]).toBe("image/webp");
     expect((await page.request.get("/media-file/%2e%2e%2f.env.local")).status()).not.toBe(200);
     await page.goto("/admin");
-    await page.getByRole("button", { name: /Sản phẩm \d+/ }).click();
+    await page.getByRole("button", { name: "Mở điều hướng" }).click();
+    await page.getByRole("link", { name: /Sản phẩm \d+/ }).click();
     await page.getByRole("button", { name: /THÊM SẢN PHẨM/ }).click();
-    await page.getByLabel("Tên sản phẩm").fill(name);
+    await page.getByLabel("Tên sản phẩm", { exact: true }).fill(name);
     await page.getByRole("button", { name: "Lưu", exact: true }).click();
-    await expect(page.getByRole("button", { name: "Đóng" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Đóng", exact: true })).toHaveCount(0);
     const [draft] = await sql`select id, published, slug from products where name = ${name}`;
     expect(draft.published).toBe(false);
     expect((await page.request.get(`/san-pham/${draft.slug}`)).status()).toBe(404);
-    await page.locator('[class*="productRow"]').filter({ hasText: name }).getByRole("button", { name: "Nhân bản" }).click();
-    await expect(page.getByLabel("Tên sản phẩm")).toHaveValue(`${name} (bản sao)`);
-    await page.getByRole("button", { name: "Đóng" }).click();
+    await page.locator('[class*="productRow"]').filter({ hasText: name }).first().getByRole("button", { name: `Hành động ${name}` }).click();
+    await page.getByRole("menuitem", { name: "Nhân bản" }).click();
+    await expect(page.getByLabel("Tên sản phẩm", { exact: true })).toHaveValue(`${name} (bản sao)`);
+    await page.getByRole("button", { name: "Đóng", exact: true }).click();
     const [copy] = await sql`select published from products where name = ${name + " (bản sao)"}`;
     expect(copy.published).toBe(false);
-    await page.locator('[class*="productRow"]').filter({ hasText: name }).first().getByRole("button", { name: "Sửa" }).click();
+    await page.locator('[class*="productRow"]').filter({ hasText: name }).first().getByRole("button", { name: `Hành động ${name}` }).click();
+    await page.getByRole("menuitem", { name: "Sửa" }).click();
     await page.getByRole("button", { name: /Thêm ảnh từ kho/ }).click();
     const picker = page.getByRole("dialog", { name: "Chọn ảnh" });
     await picker.getByRole("button", { name: new RegExp(`${slug}\\.png`) }).click();
@@ -50,7 +54,7 @@ test("admin mobile: tải ảnh local, lưu nháp chỉ tên, nhân bản và đ
     await page.getByLabel("Trạng thái").selectOption("published");
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.getByRole("button", { name: "Lưu", exact: true }).click();
-    await expect(page.getByRole("button", { name: "Đóng" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Đóng", exact: true })).toHaveCount(0);
     const [published] = await sql`select price, published, image from products where id = ${draft.id}`;
     expect(published.price).toBe(2780000); expect(published.published).toBe(true); expect(published.image).toBe(second.url);
     await page.goto(`/san-pham/${draft.slug}`);

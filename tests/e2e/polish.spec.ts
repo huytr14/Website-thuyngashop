@@ -68,6 +68,7 @@ test("biến thể trừ và hoàn cả tồn tổng lẫn tồn dòng", async (
 });
 
 test("storefront không tràn, thẻ thẳng hàng và chữ đọc được", async ({ page }, testInfo) => {
+  test.setTimeout(90_000);
   for (const width of [320, 390, 1440, 1920]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/");

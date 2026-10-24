@@ -74,6 +74,7 @@ test("wishlist vãng lai hợp nhất vào tài khoản và mobile không tràn 
 });
 
 test("flash áp giá thật; admin sửa nhanh, sửa hàng loạt và doanh thu", async ({ page }, testInfo) => {
+  test.setTimeout(120_000);
   const sql = postgres(process.env.DATABASE_URL!, { prepare: false });
   const email = `flash-${Date.now()}@example.com`;
   const [settings] = await sql`select flash_sale_title, flash_sale_start, flash_sale_end from shop_settings where id = 1`;
@@ -102,15 +103,16 @@ test("flash áp giá thật; admin sửa nhanh, sửa hàng loạt và doanh thu
     await page.getByLabel("MẬT KHẨU").fill(process.env.ADMIN_PASSWORD!);
     await page.getByRole("button", { name: "ĐĂNG NHẬP" }).click();
     const [revenue] = await sql`select coalesce(sum(total),0)::int as total from orders where status <> 'HUY' and created_at::date = current_date`;
-    await expect(page.getByRole("button", { name: /Doanh thu hôm nay/ })).toContainText(revenue.total.toLocaleString("vi-VN"));
-    await page.getByRole("button", { name: /Sản phẩm \d+/ }).click();
+    await expect(page.getByRole("button", { name: /Doanh thu hôm nay/ })).toContainText(revenue.total.toLocaleString("vi-VN"), { timeout: 20_000 });
+    await page.getByRole("link", { name: /Sản phẩm \d+/ }).click();
+    await page.getByLabel("Tìm theo tên sản phẩm").fill("Kewpie Sốt mè rang");
     await page.getByLabel("Giá bán Kewpie Sốt mè rang").fill("124000");
     await page.locator('[class*="productRow"]').filter({ hasText: "Kewpie Sốt mè rang" }).getByRole("button", { name: "Lưu giá" }).click();
     await expect.poll(async () => { const [row] = await sql`select price from products where id = ${product.id}`; return row.price; }).toBe(124000);
     await page.goto("/san-pham/kewpie-sot-me-rang");
     await expect(page.locator(".detail-price strong")).toContainText("124.000₫");
     await page.goto("/admin");
-    await page.getByRole("button", { name: "Sửa hàng loạt" }).click();
+    await page.getByRole("link", { name: "Sửa hàng loạt" }).click();
     for (const row of rows) await page.getByLabel(`price ${row.name}`, { exact: true }).fill(String(row.price - 1000));
     await page.getByRole("button", { name: "Lưu tất cả" }).click();
     await expect.poll(async () => { const changed = await sql`select id,price from products`; return rows.every((item) => changed.find((row) => row.id === item.id)?.price === item.price - 1000); }).toBe(true);

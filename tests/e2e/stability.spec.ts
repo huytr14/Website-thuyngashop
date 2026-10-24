@@ -81,6 +81,6 @@ test("tin tức tự sinh slug và báo thiếu nội dung ngay trên form", asy
   await page.getByLabel("TIÊU ĐỀ").fill("Dưỡng ẩm chuyên sâu");
   await expect(page.getByLabel("SLUG")).toHaveValue("duong-am-chuyen-sau");
   await page.getByRole("button", { name: "LƯU BÀI VIẾT" }).click();
-  await expect(page.getByRole("alert")).toContainText("Nội dung cần ít nhất 10 ký tự");
+  await expect(page.locator("small[role='alert']")).toContainText("Nội dung cần ít nhất 10 ký tự");
   await page.screenshot({ path: testInfo.outputPath("blog-slug.png"), fullPage: true });
 });

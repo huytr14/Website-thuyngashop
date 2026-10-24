@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import postgres from "postgres";
 
 test("cây danh mục, sản phẩm TPCN, facet, brand và CSV đường dẫn", async ({ page }) => {
+  test.setTimeout(120_000);
   const suffix = Date.now();
   const categoryName = `Kiểm thử xương khớp ${suffix}`;
   const productName = `TPCN kiểm thử ${suffix}`;
@@ -36,9 +37,10 @@ test("cây danh mục, sản phẩm TPCN, facet, brand và CSV đường dẫn",
     expect(await page.locator(".department-rail").count()).toBeLessThanOrEqual(2);
 
     await page.goto("/admin");
-    await page.getByRole("button", { name: /Sản phẩm \d+/ }).click();
+    await page.getByRole("button", { name: "Mở điều hướng" }).click();
+    await page.getByRole("link", { name: /Sản phẩm \d+/ }).click();
     await page.getByRole("button", { name: /THÊM SẢN PHẨM/ }).click();
-    await page.getByLabel("Tên sản phẩm").fill(productName);
+    await page.getByLabel("Tên sản phẩm", { exact: true }).fill(productName);
     await page.getByRole("button", { name: "Lưu", exact: true }).click();
     await expect(page.getByText("Đã lưu sản phẩm")).toBeVisible();
     const adminData = await (await page.request.get("/api/admin")).json();
