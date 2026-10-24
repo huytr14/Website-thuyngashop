@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { hasAdminSession } from "@/app/admin-auth";
 import { openStoreDb } from "@/db/store";
 import { storeShopSettings } from "@/db/store-schema";
+import { invalidFields } from "@/lib/admin-validation";
 
 const settingsSchema = z.object({
   freeShippingThreshold: z.coerce.number().int().min(0).max(1_000_000_000),
@@ -21,7 +22,7 @@ const settingsSchema = z.object({
 export async function PATCH(request: Request) {
   if (!await hasAdminSession()) return Response.json({ error: "Unauthorized" }, { status: 401 });
   const parsed = settingsSchema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) return Response.json({ error: parsed.error.issues[0]?.message ?? "Cấu hình không hợp lệ" }, { status: 400 });
+  if (!parsed.success) return invalidFields(parsed.error);
   const { db, close } = openStoreDb();
   try {
     const [settings] = await db.insert(storeShopSettings).values({ id: 1, ...parsed.data }).onConflictDoUpdate({ target: storeShopSettings.id, set: parsed.data }).returning();

@@ -10,6 +10,7 @@ import "./editor.css";
 import "./admin-extra.css";
 import styles from "./admin.module.css";
 import { type SiteContent } from "@/lib/site-content";
+import { splitIssues } from "@/lib/admin-validation";
 
 type Category = { id: number; name: string; slug: string; parentId: number | null };
 type Product = EditorProduct & { categoryName: string | null };
@@ -54,6 +55,7 @@ export default function AdminDashboard({ brand }: { brand: { logo: string; name:
   const [csvErrors, setCsvErrors] = useState<string[]>([]);
   const [qrMedia, setQrMedia] = useState<number[]>([]);
   const [settingsDirty, setSettingsDirty] = useState(false);
+  const [settingsIssues, setSettingsIssues] = useState<Record<string, string>>({});
   const settingsForm = useRef<HTMLFormElement>(null);
   const [savingCell, setSavingCell] = useState("");
   const [bulk, setBulk] = useState<Record<number, Partial<Product>>>({});
@@ -171,12 +173,14 @@ export default function AdminDashboard({ brand }: { brand: { logo: string; name:
     if (qrMedia.length) { const response = await fetch("/api/admin/media"); const data = await response.json(); payload.vietQrUrl = data.media.find((item: { id: number }) => item.id === qrMedia[0])?.url ?? payload.vietQrUrl; }
     const response = await fetch("/api/admin/settings", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
     const data = await response.json();
-    if (!response.ok) return flash(data.error ?? "Không thể lưu cấu hình");
+    if (!response.ok) { const { at, other } = splitIssues(data, ["flashSaleTitle", "flashSaleStart", "flashSaleEnd", "freeShippingThreshold", "standardShippingFee", "bankName", "bankAccountName", "bankAccountNumber", "vietQrUrl", "shopEmail", "aboutContent", "privacyPolicy", "shippingPolicy", "returnsPolicy", "termsPolicy"]); setSettingsIssues(at); if (other) flash(other, "error"); return; }
     setSettings(data.settings);
     setSettingsDirty(false);
+    setSettingsIssues({});
     flash("Đã lưu cấu hình cửa hàng");
   };
   const closeEditor = () => { setEditing(undefined); const params = new URLSearchParams(location.search); params.delete("edit"); history.replaceState(null, "", `/admin${params.size ? `?${params}` : ""}`); };
+  const settingsField = (name: string) => settingsIssues[name] && <small className="editor-field-error" role="alert">{settingsIssues[name]}</small>;
 
   return <AdminChrome title={view === "home" ? "Tổng quan" : view === "products" ? "Sản phẩm" : view === "bulk" ? "Sửa hàng loạt" : view === "orders" ? "Đơn hàng" : "Cấu hình"} brand={brand} view={view} onViewChange={(next, href) => { setView(next as typeof view); const params = new URL(href, location.origin).searchParams; const editId = Number(params.get("edit")); setEditing(editId ? products.find((item) => item.id === editId) : undefined); const code = params.get("order"); if (code) { const order = orders.find((item) => item.code === code); if (order) void openOrder(order.id); } }} action={view === "products" && <Button variant="primary" onClick={() => { setError(""); setEditing(null); }}>＋ THÊM SẢN PHẨM</Button>}>
       {notice && <div className={styles.notice}>✓ {notice}</div>}
@@ -225,24 +229,24 @@ export default function AdminDashboard({ brand }: { brand: { logo: string; name:
         {filteredOrders.length > 20 && <div className="admin-pagination"><Button disabled={orderPage === 0} onClick={() => setOrderPage(orderPage - 1)}>Trước</Button><span>Trang {orderPage + 1}/{Math.ceil(filteredOrders.length / 20)}</span><Button disabled={(orderPage + 1) * 20 >= filteredOrders.length} onClick={() => setOrderPage(orderPage + 1)}>Sau</Button></div>}
       </section>}
 
-      {view === "settings" && settings && <section className={styles.panel}><form ref={settingsForm} className={styles.settingsForm} onInput={() => setSettingsDirty(true)} onSubmit={saveSettings}>
-        <label>TIÊU ĐỀ FLASH SALE<input name="flashSaleTitle" maxLength={100} defaultValue={settings.flashSaleTitle}/></label>
-        <label>BẮT ĐẦU FLASH SALE<input type="datetime-local" name="flashSaleStart" defaultValue={dateInput(settings.flashSaleStart)}/></label>
-        <label>KẾT THÚC FLASH SALE<input type="datetime-local" name="flashSaleEnd" defaultValue={dateInput(settings.flashSaleEnd)}/></label>
-        <label>MIỄN PHÍ SHIP TỪ<input required min="0" type="number" name="freeShippingThreshold" defaultValue={settings.freeShippingThreshold}/></label>
-        <label>PHÍ SHIP TIÊU CHUẨN<input required min="0" type="number" name="standardShippingFee" defaultValue={settings.standardShippingFee}/></label>
-        <label>NGÂN HÀNG<input name="bankName" maxLength={150} defaultValue={settings.bankName}/></label>
-        <label>CHỦ TÀI KHOẢN<input name="bankAccountName" maxLength={150} defaultValue={settings.bankAccountName}/></label>
-        <label>SỐ TÀI KHOẢN<input name="bankAccountNumber" maxLength={50} defaultValue={settings.bankAccountNumber}/></label>
-        <label>ẢNH VIETQR <MediaPicker selected={qrMedia} onChange={(ids) => { setQrMedia(ids); setSettingsDirty(true); }} multiple={false}/><input name="vietQrUrl" type="url" maxLength={2000} defaultValue={settings.vietQrUrl} placeholder="URL cũ (dự phòng)"/></label>
-        <label className={styles.full}>EMAIL NHẬN THÔNG BÁO ĐƠN<input name="shopEmail" type="email" maxLength={255} defaultValue={settings.shopEmail}/></label>
-        <label className={styles.full}>NỘI DUNG GIỚI THIỆU<textarea name="aboutContent" required rows={7} defaultValue={settings.aboutContent}/></label>
+      {view === "settings" && settings && <section className={styles.panel}><form ref={settingsForm} className={styles.settingsForm} onInput={(event) => { setSettingsDirty(true); const name = (event.target as HTMLInputElement).name; if (name) setSettingsIssues((current) => ({ ...current, [name]: "" })); }} onSubmit={saveSettings}>
+        <label>TIÊU ĐỀ FLASH SALE<input name="flashSaleTitle" maxLength={100} defaultValue={settings.flashSaleTitle}/>{settingsField("flashSaleTitle")}</label>
+        <label>BẮT ĐẦU FLASH SALE<input type="datetime-local" name="flashSaleStart" defaultValue={dateInput(settings.flashSaleStart)}/>{settingsField("flashSaleStart")}</label>
+        <label>KẾT THÚC FLASH SALE<input type="datetime-local" name="flashSaleEnd" defaultValue={dateInput(settings.flashSaleEnd)}/>{settingsField("flashSaleEnd")}</label>
+        <label>MIỄN PHÍ SHIP TỪ<input required min="0" type="number" name="freeShippingThreshold" defaultValue={settings.freeShippingThreshold}/>{settingsField("freeShippingThreshold")}</label>
+        <label>PHÍ SHIP TIÊU CHUẨN<input required min="0" type="number" name="standardShippingFee" defaultValue={settings.standardShippingFee}/>{settingsField("standardShippingFee")}</label>
+        <label>NGÂN HÀNG<input name="bankName" maxLength={150} defaultValue={settings.bankName}/>{settingsField("bankName")}</label>
+        <label>CHỦ TÀI KHOẢN<input name="bankAccountName" maxLength={150} defaultValue={settings.bankAccountName}/>{settingsField("bankAccountName")}</label>
+        <label>SỐ TÀI KHOẢN<input name="bankAccountNumber" maxLength={50} defaultValue={settings.bankAccountNumber}/>{settingsField("bankAccountNumber")}</label>
+        <label>ẢNH VIETQR <MediaPicker selected={qrMedia} onChange={(ids) => { setQrMedia(ids); setSettingsDirty(true); setSettingsIssues((current) => ({ ...current, vietQrUrl: "" })); }} multiple={false}/><input name="vietQrUrl" type="url" maxLength={2000} defaultValue={settings.vietQrUrl} placeholder="URL cũ (dự phòng)"/>{settingsField("vietQrUrl")}</label>
+        <label className={styles.full}>EMAIL NHẬN THÔNG BÁO ĐƠN<input name="shopEmail" type="email" maxLength={255} defaultValue={settings.shopEmail}/>{settingsField("shopEmail")}</label>
+        <label className={styles.full}>NỘI DUNG GIỚI THIỆU<textarea name="aboutContent" required rows={7} defaultValue={settings.aboutContent}/>{settingsField("aboutContent")}</label>
         <input type="hidden" name="contactContent" value={settings.contactContent}/>
-        <label className={styles.full}>CHÍNH SÁCH BẢO MẬT<textarea name="privacyPolicy" required rows={7} defaultValue={settings.privacyPolicy}/></label>
-        <label className={styles.full}>CHÍNH SÁCH VẬN CHUYỂN<textarea name="shippingPolicy" required rows={7} defaultValue={settings.shippingPolicy}/></label>
-        <label className={styles.full}>CHÍNH SÁCH ĐỔI TRẢ<textarea name="returnsPolicy" required rows={7} defaultValue={settings.returnsPolicy}/></label>
-        <label className={styles.full}>ĐIỀU KHOẢN<textarea name="termsPolicy" required rows={7} defaultValue={settings.termsPolicy}/></label>
-      </form><StickySaveBar dirty={settingsDirty} onUndo={() => { settingsForm.current?.reset(); setQrMedia([]); setSettingsDirty(false); }} onSave={() => settingsForm.current?.requestSubmit()} saveText="LƯU CẤU HÌNH"/><div className={styles.messages}><h2>Lời nhắn liên hệ</h2>{messages.map((item) => <article key={item.id}><b>{item.name}</b><small>{item.email}{item.phone ? ` · ${item.phone}` : ""} · {new Date(item.createdAt).toLocaleString("vi-VN")}</small><p>{item.message}</p></article>)}{!messages.length && <p>Chưa có lời nhắn.</p>}</div></section>}
+        <label className={styles.full}>CHÍNH SÁCH BẢO MẬT<textarea name="privacyPolicy" required rows={7} defaultValue={settings.privacyPolicy}/>{settingsField("privacyPolicy")}</label>
+        <label className={styles.full}>CHÍNH SÁCH VẬN CHUYỂN<textarea name="shippingPolicy" required rows={7} defaultValue={settings.shippingPolicy}/>{settingsField("shippingPolicy")}</label>
+        <label className={styles.full}>CHÍNH SÁCH ĐỔI TRẢ<textarea name="returnsPolicy" required rows={7} defaultValue={settings.returnsPolicy}/>{settingsField("returnsPolicy")}</label>
+        <label className={styles.full}>ĐIỀU KHOẢN<textarea name="termsPolicy" required rows={7} defaultValue={settings.termsPolicy}/>{settingsField("termsPolicy")}</label>
+      </form><StickySaveBar dirty={settingsDirty} onUndo={() => { settingsForm.current?.reset(); setQrMedia([]); setSettingsDirty(false); setSettingsIssues({}); }} onSave={() => settingsForm.current?.requestSubmit()} saveText="LƯU CẤU HÌNH"/><div className={styles.messages}><h2>Lời nhắn liên hệ</h2>{messages.map((item) => <article key={item.id}><b>{item.name}</b><small>{item.email}{item.phone ? ` · ${item.phone}` : ""} · {new Date(item.createdAt).toLocaleString("vi-VN")}</small><p>{item.message}</p></article>)}{!messages.length && <p>Chưa có lời nhắn.</p>}</div></section>}
     {editing !== undefined && <Suspense fallback={<Skeleton rows={3}/>}><ProductEditor key={editing?.id ?? "new"} product={editing} categories={categories} badges={[...new Set(products.map((item) => item.badge).filter((item): item is string => !!item))]} onClose={closeEditor} onSaved={() => { closeEditor(); void load(); flash("Đã lưu sản phẩm"); }}/></Suspense>
     }
 

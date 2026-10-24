@@ -3,6 +3,7 @@ import { z } from "zod";
 import { hasAdminSession } from "@/app/admin-auth";
 import { openStoreDb } from "@/db/store";
 import { storeVouchers } from "@/db/store-schema";
+import { fieldIssue, invalidFields } from "@/lib/admin-validation";
 
 export const voucherSchema = z.object({
   code: z.string().trim().min(2).max(50).regex(/^[A-Za-z0-9_-]+$/, "Mã chỉ gồm chữ, số, _ và -").transform((value) => value.toUpperCase()),
@@ -30,12 +31,12 @@ export async function GET() {
 export async function POST(request: Request) {
   if (!await hasAdminSession()) return Response.json({ error: "Unauthorized" }, { status: 401 });
   const parsed = voucherSchema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) return Response.json({ error: parsed.error.issues[0]?.message ?? "Mã không hợp lệ" }, { status: 400 });
+  if (!parsed.success) return invalidFields(parsed.error);
   const { db, close } = openStoreDb();
   try {
-    if ((await db.select({ id: storeVouchers.id }).from(storeVouchers).where(eq(storeVouchers.code, parsed.data.code)).limit(1)).length) return Response.json({ error: "Mã giảm giá đã tồn tại" }, { status: 409 });
+    if ((await db.select({ id: storeVouchers.id }).from(storeVouchers).where(eq(storeVouchers.code, parsed.data.code)).limit(1)).length) return fieldIssue("code", "Mã giảm giá đã tồn tại", 409);
     const [voucher] = await db.insert(storeVouchers).values(parsed.data).returning();
     return Response.json({ voucher }, { status: 201 });
-  } catch (error) { if ((error as { code?: string }).code === "23505") return Response.json({ error: "Mã giảm giá đã tồn tại" }, { status: 409 }); throw error; }
+  } catch (error) { if ((error as { code?: string }).code === "23505") return fieldIssue("code", "Mã giảm giá đã tồn tại", 409); throw error; }
   finally { await close(); }
 }
